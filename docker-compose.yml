@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: "${DB_NAME:-website_template}"
+      POSTGRES_USER: "${DB_USER:-postgres}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres} -d ${DB_NAME:-website_template}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  backend:
+    build:
+      context: ./src/backend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.development
+      SECRET_KEY: "${SECRET_KEY}"
+      DB_NAME: "${DB_NAME:-website_template}"
+      DB_USER: "${DB_USER:-postgres}"
+      DB_PASSWORD: "${DB_PASSWORD}"
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      JWT_SIGNING_KEY: "${JWT_SIGNING_KEY}"
+      DEBUG: "True"
+      ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./src/backend:/app
+
+  frontend:
+    build:
+      context: ./src/frontend
+      dockerfile: Dockerfile.dev
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./src/frontend:/app
+      - frontend-node-modules:/app/node_modules
+
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./infra/nginx/nginx.dev.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - frontend
+      - backend
+
+volumes:
+  postgres-data:
+  frontend-node-modules:
