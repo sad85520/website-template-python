@@ -1,6 +1,9 @@
 """Auth endpoint tests."""
+from datetime import timedelta
+
 import pytest
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APIClient
 
@@ -49,6 +52,9 @@ class TestRegister:
 
 @pytest.mark.django_db
 class TestLogin:
+    def setup_method(self) -> None:
+        self.url = reverse("auth-login")
+
     def test_login_success(self, client: APIClient, user: User) -> None:
         url = reverse("auth-login")
         response = client.post(url, {"email": user.email, "password": "Password123!"}, format="json")
@@ -71,6 +77,39 @@ class TestLogin:
 
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 
+    def test_login_locked_account(self, client: APIClient) -> None:
+        """Locked account cannot login"""
+        user = UserFactory()
+        user.lockout_until = timezone.now() + timedelta(minutes=15)
+        user.save()
+        response = client.post(self.url, {"email": user.email, "password": "testpass123"})
+        assert response.status_code == 401
+        assert "locked" in response.data["detail"].lower()
+
+    def test_login_increments_failed_attempts(self, client: APIClient) -> None:
+        """Failed login increments counter"""
+        user = UserFactory()
+        client.post(self.url, {"email": user.email, "password": "wrongpassword"})
+        user.refresh_from_db()
+        assert user.failed_login_attempts == 1
+
+    def test_login_locks_after_five_failures(self, client: APIClient) -> None:
+        """Account locked after 5 failed attempts"""
+        user = UserFactory()
+        for _ in range(5):
+            client.post(self.url, {"email": user.email, "password": "wrongpassword"})
+        user.refresh_from_db()
+        assert user.lockout_until is not None
+
+    def test_login_resets_failed_attempts_on_success(self, client: APIClient) -> None:
+        """Successful login resets counter"""
+        user = UserFactory(password="testpass123")
+        user.failed_login_attempts = 3
+        user.save()
+        client.post(self.url, {"email": user.email, "password": "testpass123"})
+        user.refresh_from_db()
+        assert user.failed_login_attempts == 0
+
 
 @pytest.mark.django_db
 class TestTokenRefresh:
@@ -91,6 +130,13 @@ class TestTokenRefresh:
     def test_refresh_without_cookie(self, client: APIClient) -> None:
         response = client.post(reverse("auth-refresh"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_refresh_with_expired_token(self, client: APIClient) -> None:
+        """Expired refresh token is rejected"""
+        # Use an obviously invalid/expired token string
+        client.cookies["refresh_token"] = "expiredtokenvalue"
+        response = client.post(reverse("token-refresh"))
+        assert response.status_code == 401
 
 
 @pytest.mark.django_db

@@ -91,7 +91,6 @@ jobs:
 
       - name: Type check (Mypy)
         run: mypy . --ignore-missing-imports
-        continue-on-error: true
 
       - name: Run migrations
         run: python manage.py migrate
@@ -104,6 +103,17 @@ jobs:
         with:
           files: coverage.xml
         continue-on-error: true
+
+  secrets-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Scan for secrets
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   k8s-lint:
     name: K8S Manifest Lint

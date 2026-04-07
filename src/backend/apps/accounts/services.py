@@ -25,15 +25,37 @@ def register_user(email: str, password: str, display_name: str) -> User:
 def login_user(email: str, password: str) -> tuple[User, str, str]:
     """
     驗證使用者並回傳 (user, access_token, refresh_token_str)。
-    Raises AuthenticationFailed if credentials are invalid.
+    Raises AuthenticationFailed if credentials are invalid or account is locked.
     """
     from rest_framework.exceptions import AuthenticationFailed
 
+    # Check if the account exists and is currently locked before authenticating.
+    try:
+        candidate = User.objects.get(email=email)
+        if candidate.lockout_until and candidate.lockout_until > timezone.now():
+            raise AuthenticationFailed("Account is temporarily locked. Try again later.")
+    except User.DoesNotExist:
+        pass
+
     user = authenticate(username=email, password=password)
     if user is None:
+        # Increment failed attempts on the candidate user if they exist.
+        try:
+            failed_user = User.objects.get(email=email)
+            failed_user.failed_login_attempts += 1
+            if failed_user.failed_login_attempts >= 5:
+                failed_user.lockout_until = timezone.now() + timedelta(minutes=15)
+            failed_user.save()
+        except User.DoesNotExist:
+            pass
         raise AuthenticationFailed("Invalid email or password.")
     if not user.is_active:
         raise AuthenticationFailed("Account is disabled.")
+
+    # Reset lockout state on successful authentication.
+    user.failed_login_attempts = 0
+    user.lockout_until = None
+    user.save()
 
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
