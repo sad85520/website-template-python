@@ -5,6 +5,7 @@ from datetime import timedelta
 from pathlib import Path
 
 from decouple import config
+from django.utils.csp import CSP
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -45,6 +46,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "django.middleware.csp.ContentSecurityPolicyMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -53,6 +55,18 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+# Content Security Policy (Django 6.0 built-in)
+# Covers API endpoints and Swagger UI. Tighten per-route in production if needed.
+SECURE_CSP = {
+    "default-src": [CSP.NONE],
+    "script-src": [CSP.SELF, CSP.UNSAFE_INLINE],  # Swagger UI requires inline scripts
+    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],   # Swagger UI requires inline styles
+    "img-src": [CSP.SELF, "data:"],
+    "font-src": [CSP.SELF],
+    "connect-src": [CSP.SELF],
+    "frame-ancestors": [CSP.NONE],
+}
 
 ROOT_URLCONF = "config.urls"
 
