@@ -7,6 +7,7 @@
 | Docker Desktop | 4.x+ | 執行所有服務 |
 | make | any | 指令捷徑 |
 | Git | 2.x+ | 版本控制 |
+| pnpm | 9+ | 前端套件管理（首次初始化用） |
 
 ## 快速啟動
 
@@ -15,7 +16,10 @@
 cp .env.example .env
 # 填入 SECRET_KEY、DB_PASSWORD、JWT_SIGNING_KEY
 
-# 2. 啟動服務
+# 2. 初始化前端 lockfile（首次，確保 CI --frozen-lockfile 可正常運行）
+cd src/frontend && pnpm install && cd ../..
+
+# 3. 啟動服務
 make dev-build
 
 # 3. 套用 Migration（首次啟動）

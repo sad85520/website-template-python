@@ -34,6 +34,7 @@ Nginx
     ↓
 Django Middleware Stack:
   SecurityMiddleware
+  ContentSecurityPolicyMiddleware  ← CSP 標頭（Django 6.0 原生）
   CorsMiddleware       ← 開發環境 CORS
   SessionMiddleware
   AuthenticationMiddleware

@@ -6,8 +6,8 @@
 
 | 層級 | 技術 |
 |------|------|
-| 前端 | Vue 3, TypeScript, Vite, Vue Router 4, Pinia, Tailwind CSS, Axios |
-| 後端 | Python 3.12, Django 5, Django REST Framework |
+| 前端 | Vue 3, TypeScript, Vite, Vue Router 4, Pinia, Tailwind CSS v4, Axios, Zod |
+| 後端 | Python 3.12, Django 6.0, Django REST Framework |
 | 資料庫 | PostgreSQL 16 |
 | 認證 | JWT + Refresh Token (httpOnly cookie) |
 | API 文件 | drf-spectacular (Swagger/OpenAPI) |

@@ -27,6 +27,7 @@ jobs:
           cache: "pnpm"
           cache-dependency-path: src/frontend/pnpm-lock.yaml
 
+      # Run `pnpm install` locally first to generate pnpm-lock.yaml, then commit it.
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
