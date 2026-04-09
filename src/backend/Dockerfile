@@ -1,15 +1,20 @@
 # ---- Build Stage ----
 FROM python:3.12-slim AS builder
 
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
 WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1 \
-    PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1
+ENV UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy
 
-RUN pip install --upgrade pip
-COPY requirements.txt .
-RUN pip wheel --no-deps --wheel-dir /wheels -r requirements.txt
+# Install dependencies first for better layer caching
+COPY pyproject.toml uv.lock ./
+RUN uv sync --frozen --no-dev --no-install-project
+
+# Copy source and finalize install
+COPY . .
+RUN uv sync --frozen --no-dev
 
 # ---- Runtime Stage ----
 FROM python:3.12-slim AS runtime
@@ -18,12 +23,10 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    DJANGO_SETTINGS_MODULE=config.settings.production
+    DJANGO_SETTINGS_MODULE=config.settings.production \
+    PATH="/app/.venv/bin:$PATH"
 
-COPY --from=builder /wheels /wheels
-RUN pip install --no-index --find-links=/wheels /wheels/*.whl && rm -rf /wheels
-
-COPY . .
+COPY --from=builder /app /app
 
 RUN python manage.py collectstatic --noinput
 

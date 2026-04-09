@@ -11,6 +11,7 @@
 | 資料庫 | PostgreSQL 16 |
 | 認證 | JWT + Refresh Token (httpOnly cookie) |
 | API 文件 | drf-spectacular (Swagger/OpenAPI) |
+| 套件管理 | uv (Python), pnpm (前端) |
 | 程式碼品質 | ESLint, Prettier, Vitest, Ruff, Mypy, pytest |
 | 基礎設施 | Docker Compose, Nginx, GitHub Actions, Kubernetes |
 

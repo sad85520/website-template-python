@@ -1,3 +1,35 @@
+[project]
+name = "website-template-python"
+version = "0.1.0"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=6.0,<7.0",
+    "djangorestframework>=3.15,<4.0",
+    "djangorestframework-simplejwt>=5.3,<6.0",
+    "drf-spectacular>=0.27,<1.0",
+    "psycopg[binary]>=3.1,<4.0",
+    "django-cors-headers>=4.3,<5.0",
+    "python-decouple>=3.8,<4.0",
+    "structlog>=24.0,<25.0",
+    "django-health-check>=3.18,<4.0",
+    "gunicorn>=22.0,<23.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3,<9.0",
+    "pytest-django>=4.9,<5.0",
+    "pytest-cov>=6.0,<7.0",
+    "factory-boy>=3.3,<4.0",
+    "ruff>=0.8,<1.0",
+    "mypy>=1.13,<2.0",
+    "django-stubs[compatible-mypy]>=6.0,<7.0",
+    "djangorestframework-stubs>=3.15,<4.0",
+]
+
+[tool.uv]
+dev-dependencies = []
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100

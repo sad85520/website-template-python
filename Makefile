@@ -22,15 +22,15 @@ frontend-test:
 
 # 執行後端測試
 backend-test:
-	docker compose run --rm backend pytest
+	docker compose run --rm backend uv run pytest
 
 # 執行所有測試
 test: frontend-test backend-test
 
 # 執行 linting
 lint:
-	docker compose run --rm backend ruff check .
-	docker compose run --rm backend mypy .
+	docker compose run --rm backend uv run ruff check .
+	docker compose run --rm backend uv run mypy .
 
 # 資料庫 Migration
 migrate:
