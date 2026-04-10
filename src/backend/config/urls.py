@@ -7,7 +7,7 @@ from drf_spectacular.views import SpectacularAPIView
 
 
 # Scalar UI 專用 CSP：只對此 view 放寬，全域嚴格 CSP 不受影響。
-@csp_update(  # type: ignore[misc]
+@csp_update(  # type: ignore[untyped-decorator]
     SCRIPT_SRC=["https://cdn.jsdelivr.net", "'unsafe-inline'"],
     STYLE_SRC=["https://cdn.jsdelivr.net", "'unsafe-inline'"],
     IMG_SRC=["'self'", "data:", "https:"],

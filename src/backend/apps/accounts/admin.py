@@ -5,7 +5,7 @@ from .models import User
 
 
 @admin.register(User)
-class UserAdmin(BaseUserAdmin[User]):
+class UserAdmin(BaseUserAdmin):  # type: ignore[type-arg]
     list_display = ["email", "display_name", "role", "is_active", "created_at"]
     list_filter = ["role", "is_active", "is_staff"]
     search_fields = ["email", "display_name"]
