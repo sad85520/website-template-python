@@ -84,7 +84,7 @@ class TestLogin:
         user.save()
         response = client.post(self.url, {"email": user.email, "password": "testpass123"})
         assert response.status_code == 401
-        assert "locked" in response.data["detail"].lower()
+        assert "locked" in response.data["message"].lower()
 
     def test_login_increments_failed_attempts(self, client: APIClient) -> None:
         """Failed login increments counter"""
@@ -135,7 +135,7 @@ class TestTokenRefresh:
         """Expired refresh token is rejected"""
         # Use an obviously invalid/expired token string
         client.cookies["refresh_token"] = "expiredtokenvalue"
-        response = client.post(reverse("token-refresh"))
+        response = client.post(reverse("auth-refresh"))
         assert response.status_code == 401
 
 
