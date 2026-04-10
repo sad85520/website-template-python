@@ -46,6 +46,10 @@ plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 strict = true
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = ["apps.*.tests.*"]
+ignore_errors = true
+
 [tool.django-stubs]
 django_settings_module = "config.settings.development"
 

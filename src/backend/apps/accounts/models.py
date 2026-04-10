@@ -1,5 +1,6 @@
 """Custom User model with email-based authentication."""
 import uuid
+from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
@@ -7,7 +8,7 @@ from django.db import models
 
 class UserManager(BaseUserManager["User"]):
     def create_user(
-        self, email: str, password: str, display_name: str = "", **extra_fields: object
+        self, email: str, password: str, display_name: str = "", **extra_fields: Any
     ) -> "User":
         if not email:
             raise ValueError("Email is required.")
@@ -17,7 +18,7 @@ class UserManager(BaseUserManager["User"]):
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: str, **extra_fields: object) -> "User":
+    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> "User":
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", User.Role.ADMIN)

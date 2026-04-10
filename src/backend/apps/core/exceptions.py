@@ -20,7 +20,7 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
 
         if isinstance(exc, ValidationError):
             message = "Validation failed."
-            errors = _flatten_validation_errors(exc.detail)  # type: ignore[arg-type]
+            errors = _flatten_validation_errors(exc.detail)
         elif isinstance(exc, (NotAuthenticated, AuthenticationFailed)):
             message = "Authentication required."
         elif isinstance(exc, PermissionDenied):
