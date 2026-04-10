@@ -868,7 +868,7 @@ dependencies = [
     { name = "structlog" },
 ]
 
-[package.optional-dependencies]
+[package.dev-dependencies]
 dev = [
     { name = "django-stubs", extra = ["compatible-mypy"] },
     { name = "djangorestframework-stubs" },
@@ -886,23 +886,23 @@ requires-dist = [
     { name = "django-cors-headers", specifier = ">=4.3,<5.0" },
     { name = "django-csp", specifier = ">=3.8,<4.0" },
     { name = "django-health-check", specifier = ">=3.18,<4.0" },
-    { name = "django-stubs", extras = ["compatible-mypy"], marker = "extra == 'dev'", specifier = ">=6.0,<7.0" },
     { name = "djangorestframework", specifier = ">=3.15,<4.0" },
     { name = "djangorestframework-simplejwt", specifier = ">=5.3,<6.0" },
-    { name = "djangorestframework-stubs", marker = "extra == 'dev'", specifier = ">=3.15,<4.0" },
     { name = "drf-spectacular", specifier = ">=0.27,<1.0" },
-    { name = "factory-boy", marker = "extra == 'dev'", specifier = ">=3.3,<4.0" },
     { name = "gunicorn", specifier = ">=22.0,<23.0" },
-    { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.13,<2.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.1,<4.0" },
-    { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3,<9.0" },
-    { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=6.0,<7.0" },
-    { name = "pytest-django", marker = "extra == 'dev'", specifier = ">=4.9,<5.0" },
     { name = "python-decouple", specifier = ">=3.8,<4.0" },
-    { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8,<1.0" },
     { name = "structlog", specifier = ">=24.0,<25.0" },
 ]
-provides-extras = ["dev"]
 
 [package.metadata.requires-dev]
-dev = []
+dev = [
+    { name = "django-stubs", extras = ["compatible-mypy"], specifier = ">=6.0,<7.0" },
+    { name = "djangorestframework-stubs", specifier = ">=3.15,<4.0" },
+    { name = "factory-boy", specifier = ">=3.3,<4.0" },
+    { name = "mypy", specifier = ">=1.13,<2.0" },
+    { name = "pytest", specifier = ">=8.3,<9.0" },
+    { name = "pytest-cov", specifier = ">=6.0,<7.0" },
+    { name = "pytest-django", specifier = ">=4.9,<5.0" },
+    { name = "ruff", specifier = ">=0.8,<1.0" },
+]
