@@ -1,5 +1,4 @@
 """Add failed_login_attempts and lockout_until fields to User model."""
-import django.utils.timezone
 from django.db import migrations, models
 
 

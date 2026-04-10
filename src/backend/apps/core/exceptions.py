@@ -5,7 +5,6 @@ from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.http import Http404
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed, NotAuthenticated, ValidationError
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import exception_handler
 
@@ -41,7 +40,7 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         return response
 
     # 未被 DRF 處理的例外
-    if isinstance(exc, Http404) or isinstance(exc, ObjectDoesNotExist):
+    if isinstance(exc, (Http404, ObjectDoesNotExist)):
         return Response(
             {"success": False, "data": None, "message": "The requested resource was not found.", "errors": None},
             status=status.HTTP_404_NOT_FOUND,

@@ -1,7 +1,7 @@
 from csp.decorators import csp_update
 from django.conf import settings
 from django.contrib import admin
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpRequest, HttpResponse
 from django.urls import include, path
 from drf_spectacular.views import SpectacularAPIView
 

@@ -8,7 +8,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
 
-
 REFRESH_TOKEN_COOKIE = getattr(settings, "REFRESH_TOKEN_COOKIE_NAME", "refreshToken")
 ACCESS_TOKEN_LIFETIME: timedelta = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
 
