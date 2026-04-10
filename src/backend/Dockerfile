@@ -28,7 +28,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 COPY --from=builder /app /app
 
+# SECRET_KEY is required by Django settings loader even for collectstatic;
+# the build-time dummy value is never used at runtime.
+ARG SECRET_KEY=build-time-dummy-secret-key-not-used-in-production
+ENV SECRET_KEY=${SECRET_KEY}
 RUN python manage.py collectstatic --noinput
+ENV SECRET_KEY=
 
 EXPOSE 8000
 
