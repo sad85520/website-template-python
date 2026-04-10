@@ -117,6 +117,7 @@ class MeView(APIView):
 
     @extend_schema(responses={200: UserSerializer})
     def get(self, request: Request) -> Response:
+        assert isinstance(request.user, User)
         return responses.success(UserSerializer(request.user).data)
 
 

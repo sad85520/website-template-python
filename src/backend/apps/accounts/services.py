@@ -68,7 +68,7 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
     Rotate refresh token 並回傳 (new_access_token, new_refresh_token)。
     Raises TokenError if token is invalid/expired.
     """
-    refresh = RefreshToken(refresh_token_str)
+    refresh = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
     new_access_token = str(refresh.access_token)
     refresh.blacklist()
 
@@ -83,7 +83,7 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
 def logout_user(refresh_token_str: str) -> None:
     """Blacklist refresh token。"""
     try:
-        refresh = RefreshToken(refresh_token_str)
+        refresh = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
         refresh.blacklist()
     except Exception:
         pass  # 若 token 已過期或無效，靜默忽略
