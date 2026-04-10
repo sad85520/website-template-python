@@ -3,6 +3,8 @@ from .base import *  # noqa: F403, F401
 
 DEBUG = True
 
+# Scalar CSP 透過 urls.py 的 @csp_update decorator 個別套用，不在此全域覆寫。
+
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173",
     "http://localhost",

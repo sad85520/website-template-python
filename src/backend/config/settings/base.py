@@ -5,7 +5,6 @@ from datetime import timedelta
 from pathlib import Path
 
 from decouple import config
-from django.utils.csp import CSP
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -46,7 +45,7 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    "django.middleware.csp.ContentSecurityPolicyMiddleware",
+    "csp.middleware.CSPMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -56,17 +55,16 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Content Security Policy (Django 6.0 built-in)
-# Covers API endpoints and Swagger UI. Tighten per-route in production if needed.
-SECURE_CSP = {
-    "default-src": [CSP.NONE],
-    "script-src": [CSP.SELF, CSP.UNSAFE_INLINE],  # Swagger UI requires inline scripts
-    "style-src": [CSP.SELF, CSP.UNSAFE_INLINE],   # Swagger UI requires inline styles
-    "img-src": [CSP.SELF, "data:"],
-    "font-src": [CSP.SELF],
-    "connect-src": [CSP.SELF],
-    "frame-ancestors": [CSP.NONE],
-}
+# Content Security Policy（django-csp）
+# 全域嚴格 CSP，純 API 不需要任何 script/style。
+# Scalar UI 路徑透過 urls.py 的 @csp_update decorator 個別放寬。
+CSP_DEFAULT_SRC = ("'none'",)
+CSP_SCRIPT_SRC = ("'none'",)
+CSP_STYLE_SRC = ("'none'",)
+CSP_IMG_SRC = ("'self'", "data:")
+CSP_FONT_SRC = ("'none'",)
+CSP_CONNECT_SRC = ("'self'",)
+CSP_FRAME_ANCESTORS = ("'none'",)
 
 ROOT_URLCONF = "config.urls"
 
@@ -156,7 +154,7 @@ SIMPLE_JWT = {
     "USER_ID_CLAIM": "user_id",
 }
 
-# drf-spectacular (Swagger)
+# drf-spectacular（產生 OpenAPI JSON，由 Scalar UI 渲染）
 SPECTACULAR_SETTINGS = {
     "TITLE": "WebTemplate API",
     "DESCRIPTION": "Vue 3 + Django REST Framework Website Template",
