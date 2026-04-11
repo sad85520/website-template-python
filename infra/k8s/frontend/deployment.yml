@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: ghcr.io/sad85520/website-template-python/frontend:sha-ea24da3
+          image: ghcr.io/sad85520/website-template-python/frontend:sha-69dfbd8
           ports:
             - containerPort: 80
           resources:
