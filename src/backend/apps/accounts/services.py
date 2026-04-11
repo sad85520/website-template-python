@@ -7,46 +7,54 @@ from django.utils import timezone
 from rest_framework_simplejwt.tokens import RefreshToken
 
 from .models import User
+from .repositories import UserRepository
 
 REFRESH_TOKEN_COOKIE = getattr(settings, "REFRESH_TOKEN_COOKIE_NAME", "refreshToken")
 ACCESS_TOKEN_LIFETIME: timedelta = settings.SIMPLE_JWT["ACCESS_TOKEN_LIFETIME"]
 
+# Default repository instance; can be replaced in tests for isolation.
+_user_repo = UserRepository()
 
-def register_user(email: str, password: str, display_name: str) -> User:
+
+def register_user(
+    email: str,
+    password: str,
+    display_name: str,
+    *,
+    user_repo: UserRepository | None = None,
+) -> User:
     """建立新使用者。"""
-    return User.objects.create_user(
-        email=email,
-        password=password,
-        display_name=display_name,
-    )
+    repo = user_repo or _user_repo
+    return repo.create(email=email, password=password, display_name=display_name)
 
 
-def login_user(email: str, password: str) -> tuple[User, str, str]:
+def login_user(
+    email: str,
+    password: str,
+    *,
+    user_repo: UserRepository | None = None,
+) -> tuple[User, str, str]:
     """
     驗證使用者並回傳 (user, access_token, refresh_token_str)。
     Raises AuthenticationFailed if credentials are invalid or account is locked.
     """
     from rest_framework.exceptions import AuthenticationFailed
 
+    repo = user_repo or _user_repo
+
     # Check if the account exists and is currently locked before authenticating.
-    try:
-        candidate = User.objects.get(email=email)
-        if candidate.lockout_until and candidate.lockout_until > timezone.now():
-            raise AuthenticationFailed("Account is temporarily locked. Try again later.")
-    except User.DoesNotExist:
-        pass
+    candidate = repo.get_by_email_for_auth(email)
+    if candidate is not None and candidate.lockout_until and candidate.lockout_until > timezone.now():
+        raise AuthenticationFailed("Account is temporarily locked. Try again later.")
 
     user = authenticate(username=email, password=password)
     if user is None:
         # Increment failed attempts on the candidate user if they exist.
-        try:
-            failed_user = User.objects.get(email=email)
-            failed_user.failed_login_attempts += 1
-            if failed_user.failed_login_attempts >= 5:
-                failed_user.lockout_until = timezone.now() + timedelta(minutes=15)
-            failed_user.save()
-        except User.DoesNotExist:
-            pass
+        if candidate is not None:
+            candidate.failed_login_attempts += 1
+            if candidate.failed_login_attempts >= 5:
+                candidate.lockout_until = timezone.now() + timedelta(minutes=15)
+            repo.save(candidate)
         raise AuthenticationFailed("Invalid email or password.")
     if not user.is_active:
         raise AuthenticationFailed("Account is disabled.")
@@ -54,7 +62,7 @@ def login_user(email: str, password: str) -> tuple[User, str, str]:
     # Reset lockout state on successful authentication.
     user.failed_login_attempts = 0
     user.lockout_until = None
-    user.save()
+    repo.save(user)
 
     refresh = RefreshToken.for_user(user)
     access_token = str(refresh.access_token)
@@ -68,13 +76,13 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
     Rotate refresh token 並回傳 (new_access_token, new_refresh_token)。
     Raises TokenError if token is invalid/expired.
     """
+    repo = _user_repo
     refresh = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
     new_access_token = str(refresh.access_token)
     refresh.blacklist()
 
-    new_refresh = RefreshToken.for_user(
-        User.objects.get(id=refresh["user_id"])
-    )
+    user = repo.get_by_id(refresh["user_id"])
+    new_refresh = RefreshToken.for_user(user)
     new_refresh_token = str(new_refresh)
 
     return new_access_token, new_refresh_token

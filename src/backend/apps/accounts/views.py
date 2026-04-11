@@ -13,6 +13,7 @@ from apps.core import responses
 
 from . import services
 from .models import User
+from .repositories import UserRepository
 from .serializers import (
     LoginResponseSerializer,
     LoginSerializer,
@@ -22,6 +23,8 @@ from .serializers import (
 )
 
 REFRESH_COOKIE = getattr(settings, "REFRESH_TOKEN_COOKIE_NAME", "refreshToken")
+
+_user_repo = UserRepository()
 
 
 # ─── Auth Views ───────────────────────────────────────────────────────────────
@@ -127,11 +130,7 @@ class UserListView(APIView):
     @extend_schema(responses={200: UserSerializer(many=True)})
     def get(self, request: Request) -> Response:
         search = request.query_params.get("search", "")
-        queryset = User.objects.all()
-        if search:
-            queryset = queryset.filter(email__icontains=search) | queryset.filter(
-                display_name__icontains=search
-            )
+        queryset = _user_repo.search(search)
 
         from apps.core.pagination import StandardPagination
         paginator = StandardPagination()
@@ -145,8 +144,7 @@ class UserDetailView(APIView):
 
     @extend_schema(responses={200: UserSerializer})
     def get(self, request: Request, pk: str) -> Response:
-        try:
-            user = User.objects.get(pk=pk)
-        except User.DoesNotExist:
+        user = _user_repo.get_by_id(pk)
+        if user is None:
             return responses.fail("User not found.", status=status.HTTP_404_NOT_FOUND)
         return responses.success(UserSerializer(user).data)

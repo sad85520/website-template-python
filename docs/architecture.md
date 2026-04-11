@@ -49,7 +49,9 @@ View (APIView)         ← HTTP 關注點
     ↓
 Service                ← 商業邏輯
     ↓
-Django ORM             ← 資料存取
+Repository             ← 資料存取抽象（repositories.py）
+    ↓
+Django ORM             ← ORM 實作
     ↓
 PostgreSQL
 ```
@@ -67,11 +69,12 @@ PostgreSQL
 apps/
 ├── core/          # 共用工具（responses, exceptions, pagination）
 └── accounts/      # 使用者認證
-    ├── models.py      ← Custom User（email-based）
-    ├── serializers.py ← DRF Serializers
-    ├── views.py       ← APIView
-    ├── services.py    ← 商業邏輯
+    ├── models.py        ← Custom User（email-based）
+    ├── serializers.py   ← DRF Serializers
+    ├── views.py         ← APIView
+    ├── services.py      ← 商業邏輯
+    ├── repositories.py  ← 資料存取（UserRepository, IUserRepository Protocol）
     └── urls/
-        ├── auth.py    ← /api/v1/auth/
-        └── users.py   ← /api/v1/users/
+        ├── auth.py      ← /api/v1/auth/
+        └── users.py     ← /api/v1/users/
 ```
