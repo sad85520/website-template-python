@@ -86,6 +86,7 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
     refresh.blacklist()
 
     # 重新查詢使用者以確保帳號仍然存在且有效（例如帳號可能已在 token 發出後被停用）。
+    # refresh["user_id"] 是從已驗證的 JWT claims 中取出，對應 SIMPLE_JWT["USER_ID_CLAIM"] 設定值。
     user = repo.get_by_id(refresh["user_id"])
     if user is None:
         raise ValueError("User not found for refresh token")

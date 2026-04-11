@@ -142,6 +142,8 @@ class UserListView(APIView):
         queryset = _user_repo.search(search)
 
         paginator = StandardPagination()
+        # paginate_queryset() 必須先於序列化呼叫，它會對 queryset 執行 LIMIT/OFFSET，
+        # 並將分頁狀態寫入 paginator 物件；get_paginated_response() 才能讀取此狀態組裝 meta。
         page = paginator.paginate_queryset(queryset, request)
         serializer = UserSerializer(page, many=True)
         return paginator.get_paginated_response(serializer.data)

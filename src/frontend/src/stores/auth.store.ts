@@ -27,6 +27,8 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authApi.login(credentials)
       if (response.data.success && response.data.data) {
         accessToken.value = response.data.data.accessToken
+        // 登入回應僅包含 token，不包含使用者資料；
+        // 需額外呼叫 /users/me 以取得 currentUser，才能讓 UI 顯示姓名、角色等資訊。
         await fetchCurrentUser()
       }
       return response.data

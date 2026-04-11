@@ -54,6 +54,9 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = "accounts_user"
+        # 預設依 created_at 降冪排序（最新使用者優先）；
+        # 此排序會套用至所有未指定 .order_by() 的 QuerySet，需確保 created_at 欄位有建立索引，
+        # 否則大資料量時每次查詢都會觸發全表排序。
         ordering = ["-created_at"]
 
     def __str__(self) -> str:

@@ -10,6 +10,8 @@ X_FRAME_OPTIONS = "DENY"
 # 初次部署時應先用較短的值（如 3600），確認無問題後再提升至 31536000，
 # 否則一旦 HTTPS 設定有誤，使用者在 HSTS 有效期內將無法訪問網站。
 SECURE_HSTS_SECONDS = 31536000
+# include_subdomains=True 會將 HSTS 擴展至所有子網域，
+# 需確認所有子網域皆已部署有效的 HTTPS 憑證，否則會導致該子網域無法透過 HTTP 訪問。
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 
 # 生產環境 CORS 透過 Nginx 同 origin 處理，不需要 CORS headers

@@ -23,6 +23,8 @@ const routes: RouteRecordRaw[] = [
     path: '/login',
     name: 'login',
     component: () => import('@/views/LoginView.vue'),
+    // guestOnly: true 表示「僅限未登入使用者」，與 requiresAuth 互斥；
+    // navigation guard 會將已登入使用者重導向首頁，避免重複登入。
     meta: { guestOnly: true },
   },
   {

@@ -48,6 +48,10 @@ class UserRepository:
         Fetch a user by email, including those that are inactive.
         Used specifically during authentication to inspect lockout state.
         """
+        # 此方法刻意使用 .get() 而非 .filter().first()，且不加 is_active=True 篩選，
+        # 目的是在 authenticate() 之前取得完整的帳號狀態（包含停用帳號），
+        # 才能正確判斷 lockout_until 欄位。get_by_email() 會被 Django 的 authenticate()
+        # 間接呼叫（其僅查詢 active 帳號），兩者用途不同，不可混用。
         try:
             return UserModel.objects.get(email=email)
         except UserModel.DoesNotExist:

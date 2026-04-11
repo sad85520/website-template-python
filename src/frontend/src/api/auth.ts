@@ -11,6 +11,8 @@ export const authApi = {
   },
 
   refresh() {
+    // refresh token 由瀏覽器自動帶入 HttpOnly cookie（apiClient 設定 withCredentials: true），
+    // 不需要也不應該在 request body 傳送，因此此處不帶任何 payload。
     return apiClient.post<ApiResponse<LoginResponse>>('/v1/auth/refresh')
   },
 

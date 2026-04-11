@@ -15,6 +15,8 @@ CORS_ALLOW_CREDENTIALS = True
 # 開發環境顯示詳細 SQL log
 LOGGING = {
     "version": 1,
+    # disable_existing_loggers=False 保留 Django 及第三方套件的預設 logger，
+    # 避免覆寫後遺失重要的框架警告訊息。
     "disable_existing_loggers": False,
     "handlers": {
         "console": {"class": "logging.StreamHandler"},
