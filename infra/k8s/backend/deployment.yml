@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
         - name: backend
-          image: ghcr.io/sad85520/website-template-python/backend:sha-69dfbd8
+          image: ghcr.io/sad85520/website-template-python/backend:sha-0c1ba73
           ports:
             - containerPort: 8000
           envFrom:
