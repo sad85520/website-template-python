@@ -17,11 +17,11 @@ UserModel: type[User] = get_user_model()  # type: ignore[assignment]
 
 @runtime_checkable
 class IUserRepository(Protocol):
-    def get_by_id(self, user_id: object) -> "User | None": ...
-    def get_by_email(self, email: str) -> "User | None": ...
+    def get_by_id(self, user_id: object) -> User | None: ...
+    def get_by_email(self, email: str) -> User | None: ...
     def exists_by_email(self, email: str) -> bool: ...
-    def create(self, email: str, password: str, display_name: str) -> "User": ...
-    def save(self, user: "User") -> None: ...
+    def create(self, email: str, password: str, display_name: str) -> User: ...
+    def save(self, user: User) -> None: ...
     def get_all(self) -> db_models.QuerySet: ...
     def search(self, query: str) -> db_models.QuerySet: ...
 
@@ -32,13 +32,13 @@ class IUserRepository(Protocol):
 class UserRepository:
     """Encapsulates all ORM operations on the User model."""
 
-    def get_by_id(self, user_id: object) -> "User | None":
+    def get_by_id(self, user_id: object) -> User | None:
         return UserModel.objects.filter(pk=user_id).first()
 
-    def get_by_email(self, email: str) -> "User | None":
+    def get_by_email(self, email: str) -> User | None:
         return UserModel.objects.filter(email=email).first()
 
-    def get_by_email_for_auth(self, email: str) -> "User | None":
+    def get_by_email_for_auth(self, email: str) -> User | None:
         """
         Fetch a user by email, including those that are inactive.
         Used specifically during authentication to inspect lockout state.
@@ -51,14 +51,14 @@ class UserRepository:
     def exists_by_email(self, email: str) -> bool:
         return UserModel.objects.filter(email=email).exists()
 
-    def create(self, email: str, password: str, display_name: str) -> "User":
+    def create(self, email: str, password: str, display_name: str) -> User:
         return UserModel.objects.create_user(
             email=email,
             password=password,
             display_name=display_name,
         )
 
-    def save(self, user: "User") -> None:
+    def save(self, user: User) -> None:
         user.save()
 
     def get_all(self) -> db_models.QuerySet:
