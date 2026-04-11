@@ -37,12 +37,11 @@ urlpatterns = [
     path("api/v1/users/", include("apps.accounts.urls.users")),
     # Health Check
     path("api/health/", include("health_check.urls")),
-    # OpenAPI schema（drf-spectacular 產生 JSON）
-    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
 ]
 
-# Scalar API 文件 UI，僅開發環境掛載
+# OpenAPI schema JSON + Scalar UI，僅開發環境掛載
 if settings.DEBUG:
     urlpatterns += [
+        path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
         path("scalar/", scalar_view, name="scalar"),
     ]
