@@ -34,11 +34,21 @@ _user_repo = UserRepository()
 
 
 class RegisterView(APIView):
+    """使用者註冊端點，不需要驗證，並套用匿名流量限制。"""
+
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
 
     @extend_schema(request=RegisterSerializer, responses={201: UserSerializer})
     def post(self, request: Request) -> Response:
+        """建立新使用者帳號。
+
+        Args:
+            request: 包含 email、password、display_name 的請求。
+
+        Returns:
+            HTTP 201 及新建立的使用者資料。
+        """
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -51,11 +61,21 @@ class RegisterView(APIView):
 
 
 class LoginView(APIView):
+    """使用者登入端點，驗證成功後以 HttpOnly cookie 回傳 refresh token。"""
+
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
 
     @extend_schema(request=LoginSerializer, responses={200: LoginResponseSerializer})
     def post(self, request: Request) -> Response:
+        """驗證使用者憑證並回傳 access token，同時以 HttpOnly cookie 設定 refresh token。
+
+        Args:
+            request: 包含 email 與 password 的請求。
+
+        Returns:
+            HTTP 200 及 access_token、expires_in，refresh token 寫入 HttpOnly cookie。
+        """
         serializer = LoginSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -76,11 +96,21 @@ class LoginView(APIView):
 
 
 class TokenRefreshView(APIView):
+    """Token 刷新端點，從 HttpOnly cookie 讀取 refresh token 並輪轉出新的 token 對。"""
+
     permission_classes = [AllowAny]
     throttle_classes = [AnonRateThrottle]
 
     @extend_schema(responses={200: TokenRefreshResponseSerializer})
     def post(self, request: Request) -> Response:
+        """刷新 access token 並輪轉 refresh token。
+
+        Args:
+            request: refresh token 從 HttpOnly cookie 讀取，無需 body。
+
+        Returns:
+            HTTP 200 及新的 access_token、expires_in，新的 refresh token 寫入 cookie。
+        """
         # refresh token 從 HttpOnly cookie 讀取，而非 request body，
         # 前端 JavaScript 無法讀取此 cookie，防止 XSS 攻擊竊取 refresh token。
         refresh_token_str = request.COOKIES.get(REFRESH_COOKIE)
@@ -104,10 +134,20 @@ class TokenRefreshView(APIView):
 
 
 class LogoutView(APIView):
+    """使用者登出端點，黑名單 refresh token 並清除 cookie。"""
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(responses={200: None})
     def post(self, request: Request) -> Response:
+        """使 refresh token 失效並清除客戶端 cookie。
+
+        Args:
+            request: 需攜帶有效的 access token，refresh token 從 cookie 讀取。
+
+        Returns:
+            HTTP 200，同時清除 refresh token cookie。
+        """
         refresh_token_str = request.COOKIES.get(REFRESH_COOKIE)
         if refresh_token_str:
             services.logout_user(refresh_token_str)
@@ -123,10 +163,20 @@ class LogoutView(APIView):
 
 
 class MeView(APIView):
+    """取得目前登入使用者自身資料的端點。"""
+
     permission_classes = [IsAuthenticated]
 
     @extend_schema(responses={200: UserSerializer})
     def get(self, request: Request) -> Response:
+        """回傳目前已驗證使用者的資料。
+
+        Args:
+            request: 需攜帶有效的 access token。
+
+        Returns:
+            HTTP 200 及目前使用者的序列化資料。
+        """
         # assert 用於型別窄化（type narrowing）：IsAuthenticated 已保證 request.user 不是匿名使用者，
         # 此處協助靜態分析工具（mypy）推斷出正確型別，而非作為執行期防衛。
         assert isinstance(request.user, User)
@@ -134,10 +184,20 @@ class MeView(APIView):
 
 
 class UserListView(APIView):
+    """管理員專用：分頁查詢所有使用者，支援關鍵字搜尋。"""
+
     permission_classes = [IsAdminUser]
 
     @extend_schema(responses={200: UserSerializer(many=True)})
     def get(self, request: Request) -> Response:
+        """分頁回傳使用者清單，可透過 ?search= 篩選。
+
+        Args:
+            request: 需具備 Admin 權限，可帶 ?search= 與 ?page=、?limit= 查詢參數。
+
+        Returns:
+            HTTP 200 及帶分頁 meta 的使用者清單。
+        """
         search = request.query_params.get("search", "")
         queryset = _user_repo.search(search)
 
@@ -150,10 +210,21 @@ class UserListView(APIView):
 
 
 class UserDetailView(APIView):
+    """管理員專用：依 ID 查詢單一使用者。"""
+
     permission_classes = [IsAdminUser]
 
     @extend_schema(responses={200: UserSerializer})
     def get(self, request: Request, pk: str) -> Response:
+        """回傳指定使用者的資料。
+
+        Args:
+            request: 需具備 Admin 權限。
+            pk: 使用者的 UUID 字串。
+
+        Returns:
+            HTTP 200 及使用者序列化資料；使用者不存在時回傳 404。
+        """
         user = _user_repo.get_by_id(pk)
         if user is None:
             return responses.fail("User not found.", status=status.HTTP_404_NOT_FOUND)

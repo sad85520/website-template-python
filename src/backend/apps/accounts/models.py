@@ -7,9 +7,25 @@ from django.db import models
 
 
 class UserManager(BaseUserManager["User"]):
+    """自訂使用者管理器，以 email 作為主要識別欄位。"""
+
     def create_user(
         self, email: str, password: str, display_name: str = "", **extra_fields: Any
     ) -> "User":
+        """建立並儲存一般使用者。
+
+        Args:
+            email: 使用者電子郵件（登入帳號）。
+            password: 明文密碼，會透過 set_password 雜湊後儲存。
+            display_name: 使用者顯示名稱，預設為空字串。
+            **extra_fields: 額外的 User 欄位值。
+
+        Returns:
+            已儲存的 User 實例。
+
+        Raises:
+            ValueError: email 為空時拋出。
+        """
         if not email:
             raise ValueError("Email is required.")
         email = self.normalize_email(email)
@@ -19,6 +35,16 @@ class UserManager(BaseUserManager["User"]):
         return user
 
     def create_superuser(self, email: str, password: str, **extra_fields: Any) -> "User":
+        """建立並儲存超級使用者，自動設定 is_staff、is_superuser 與 Admin 角色。
+
+        Args:
+            email: 使用者電子郵件。
+            password: 明文密碼。
+            **extra_fields: 額外的 User 欄位值。
+
+        Returns:
+            已儲存的超級使用者 User 實例。
+        """
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
         extra_fields.setdefault("role", User.Role.ADMIN)
@@ -26,7 +52,11 @@ class UserManager(BaseUserManager["User"]):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
+    """系統使用者實體，以 email 作為登入憑證，內建暴力破解防護欄位。"""
+
     class Role(models.TextChoices):
+        """使用者角色列舉，控制應用層的存取權限。"""
+
         USER = "user", "User"
         ADMIN = "admin", "Admin"
 

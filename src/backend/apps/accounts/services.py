@@ -23,7 +23,17 @@ def register_user(
     *,
     user_repo: UserRepository | None = None,
 ) -> User:
-    """建立新使用者。"""
+    """建立並儲存新使用者帳號。
+
+    Args:
+        email: 使用者電子郵件（登入帳號）。
+        password: 明文密碼，由 UserManager 雜湊後儲存。
+        display_name: 使用者顯示名稱。
+        user_repo: 可替換的 repository 實例，主要供測試注入使用。
+
+    Returns:
+        已建立的 User 實例。
+    """
     repo = user_repo or _user_repo
     return repo.create(email=email, password=password, display_name=display_name)
 
@@ -97,7 +107,14 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
 
 
 def logout_user(refresh_token_str: str) -> None:
-    """Blacklist refresh token。"""
+    """將 refresh token 加入黑名單使其立即失效。
+
+    靜默忽略無效或已失效的 token：logout 是使用者主動發起的操作，
+    token 已失效視同已登出，不需要向前端回報錯誤。
+
+    Args:
+        refresh_token_str: 客戶端持有的原始 refresh token 字串。
+    """
     try:
         refresh = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
         refresh.blacklist()
@@ -108,10 +125,25 @@ def logout_user(refresh_token_str: str) -> None:
 
 
 def get_access_token_lifetime_seconds() -> int:
+    """回傳 access token 有效期秒數（由 SIMPLE_JWT 設定決定）。
+
+    Returns:
+        ACCESS_TOKEN_LIFETIME 換算後的整數秒數。
+    """
     return int(ACCESS_TOKEN_LIFETIME.total_seconds())
 
 
 def build_refresh_cookie_options(secure: bool) -> dict[str, object]:
+    """建立 refresh token cookie 的安全選項字典。
+
+    max_age 與 REFRESH_TOKEN_LIFETIME 保持一致，確保 cookie 不會比 token 早或晚過期。
+
+    Args:
+        secure: 是否設定 Secure 旗標（生產環境應為 True，強制 HTTPS 傳輸）。
+
+    Returns:
+        可直接傳入 response.set_cookie(**opts) 的選項字典。
+    """
     lifetime: timedelta = settings.SIMPLE_JWT["REFRESH_TOKEN_LIFETIME"]
     return {
         "key": REFRESH_TOKEN_COOKIE,

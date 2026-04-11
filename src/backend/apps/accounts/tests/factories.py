@@ -1,3 +1,4 @@
+"""測試用 factory，使用 factory_boy 建立 User 實例。"""
 import factory
 from factory.django import DjangoModelFactory
 
@@ -5,6 +6,8 @@ from apps.accounts.models import User
 
 
 class UserFactory(DjangoModelFactory):
+    """建立測試用 User 實例的工廠，預設產生有效且已啟用的一般使用者。"""
+
     class Meta:
         model = User
 

@@ -1,3 +1,4 @@
+"""Django Admin 使用者管理設定。"""
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -6,6 +7,8 @@ from .models import User
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):  # type: ignore[type-arg]
+    """自訂使用者後台管理介面，以 email 取代預設的 username 欄位。"""
+
     list_display = ["email", "display_name", "role", "is_active", "created_at"]
     list_filter = ["role", "is_active", "is_staff"]
     search_fields = ["email", "display_name"]
