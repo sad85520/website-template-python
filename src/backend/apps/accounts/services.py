@@ -82,6 +82,8 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
     refresh.blacklist()
 
     user = repo.get_by_id(refresh["user_id"])
+    if user is None:
+        raise ValueError("User not found for refresh token")
     new_refresh = RefreshToken.for_user(user)
     new_refresh_token = str(new_refresh)
 

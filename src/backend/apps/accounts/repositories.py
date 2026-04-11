@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
     from .models import User
 
-UserModel: type[User] = get_user_model()  # type: ignore[assignment]
+UserModel: type[User] = get_user_model()
 
 
 # ─── Protocols (optional structural typing) ────────────────────────────────────
@@ -23,8 +23,8 @@ class IUserRepository(Protocol):
     def exists_by_email(self, email: str) -> bool: ...
     def create(self, email: str, password: str, display_name: str) -> User: ...
     def save(self, user: User) -> None: ...
-    def get_all(self) -> db_models.QuerySet: ...
-    def search(self, query: str) -> db_models.QuerySet: ...
+    def get_all(self) -> db_models.QuerySet[User]: ...
+    def search(self, query: str) -> db_models.QuerySet[User]: ...
 
 
 # ─── Implementations ───────────────────────────────────────────────────────────
@@ -34,7 +34,7 @@ class UserRepository:
     """Encapsulates all ORM operations on the User model."""
 
     def get_by_id(self, user_id: object) -> User | None:
-        return UserModel.objects.filter(pk=user_id).first()
+        return UserModel.objects.filter(pk=user_id).first()  # type: ignore[misc]
 
     def get_by_email(self, email: str) -> User | None:
         return UserModel.objects.filter(email=email).first()
@@ -62,10 +62,10 @@ class UserRepository:
     def save(self, user: User) -> None:
         user.save()
 
-    def get_all(self) -> db_models.QuerySet:
+    def get_all(self) -> db_models.QuerySet[User]:
         return UserModel.objects.all()
 
-    def search(self, query: str) -> db_models.QuerySet:
+    def search(self, query: str) -> db_models.QuerySet[User]:
         if not query:
             return self.get_all()
         return (
