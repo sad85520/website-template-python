@@ -14,6 +14,8 @@ export function useAuth() {
 
     if (result.success) {
       notificationStore.success('登入成功')
+      // 優先重導向至使用者原本嘗試訪問的頁面（由 router guard 附加的 redirect 參數），
+      // 若無則導向首頁。
       const redirect = (route.query.redirect as string) || '/'
       await router.push(redirect)
     } else {
@@ -43,6 +45,8 @@ export function useAuth() {
   }
 
   return {
+    // 直接回傳 store 的 computed/ref 以保持響應性；
+    // 若改為解構賦值（const { isAuthenticated } = authStore），會失去響應性連結。
     isAuthenticated: authStore.isAuthenticated,
     currentUser: authStore.currentUser,
     isLoading: authStore.isLoading,

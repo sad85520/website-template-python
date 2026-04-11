@@ -1,4 +1,5 @@
 """全域例外處理。"""
+import logging
 from typing import Any
 
 from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
@@ -24,10 +25,12 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         elif isinstance(exc, NotAuthenticated):
             message = "Authentication required."
         elif isinstance(exc, AuthenticationFailed):
+            # AuthenticationFailed.detail 可能是 ErrorDetail 物件，需轉換為 str。
             message = str(exc.detail) if exc.detail else "Authentication required."
         elif isinstance(exc, PermissionDenied):
             message = "You do not have permission to perform this action."
         elif hasattr(response, "data"):
+            # 兜底處理：擷取 DRF 回傳的 detail 欄位，維持統一格式。
             if isinstance(response.data, dict) and "detail" in response.data:
                 message = str(response.data["detail"])
             else:
@@ -49,7 +52,8 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
         )
 
     # 其他未預期例外 → 500
-    import logging
+    # 使用 logger.exception 而非 logger.error，可自動附加完整的 traceback，
+    # 便於在 log aggregator（如 Sentry）中定位問題根源。
     logger = logging.getLogger(__name__)
     logger.exception("Unhandled exception: %s", exc)
     return Response(
@@ -59,6 +63,10 @@ def custom_exception_handler(exc: Exception, context: dict[str, Any]) -> Respons
 
 
 def _flatten_validation_errors(detail: Any, field_prefix: str = "") -> list[dict[str, str]]:
+    # DRF 的 ValidationError.detail 結構因情境而異：
+    # - 欄位錯誤為 dict（{field: [ErrorDetail, ...]}）
+    # - 非欄位錯誤（non_field_errors）為 list
+    # - 巢狀 Serializer 會產生多層 dict，需遞迴展平為前端可直接使用的扁平陣列。
     errors: list[dict[str, str]] = []
     if isinstance(detail, dict):
         for field, messages in detail.items():

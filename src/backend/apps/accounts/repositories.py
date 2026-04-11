@@ -17,6 +17,8 @@ UserModel: type[User] = get_user_model()
 
 
 @runtime_checkable
+# IUserRepository 作為結構型別協議（Structural Typing），
+# 供測試時以 Mock 物件替換真實 repository，無需繼承即可通過 isinstance 檢查（runtime_checkable）。
 class IUserRepository(Protocol):
     def get_by_id(self, user_id: object) -> User | None: ...
     def get_by_email(self, email: str) -> User | None: ...
@@ -34,6 +36,8 @@ class UserRepository:
     """Encapsulates all ORM operations on the User model."""
 
     def get_by_id(self, user_id: object) -> User | None:
+        # 使用 filter().first() 而非 get()，以避免在 user_id 不存在時拋出 DoesNotExist 例外，
+        # 讓呼叫端統一以 None 判斷即可。
         return UserModel.objects.filter(pk=user_id).first()  # type: ignore[misc]
 
     def get_by_email(self, email: str) -> User | None:
@@ -68,6 +72,8 @@ class UserRepository:
     def search(self, query: str) -> db_models.QuerySet[User]:
         if not query:
             return self.get_all()
+        # 使用 QuerySet 聯集（|）而非 Q 物件，可確保兩個 queryset 各自套用預設 ordering，
+        # 但需注意聯集結果可能含重複值（同時符合 email 與 display_name 條件），若有需要應加 .distinct()。
         return (
             UserModel.objects.filter(email__icontains=query)
             | UserModel.objects.filter(display_name__icontains=query)

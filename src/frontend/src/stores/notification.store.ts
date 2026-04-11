@@ -17,6 +17,8 @@ export const useNotificationStore = defineStore('notification', () => {
     const id = crypto.randomUUID()
     notifications.value.push({ id, type, message, duration })
 
+    // duration <= 0 表示持久通知（不自動消失），需由使用者手動關閉；
+    // 適用於需要使用者確認的錯誤訊息。
     if (duration > 0) {
       setTimeout(() => dismiss(id), duration)
     }

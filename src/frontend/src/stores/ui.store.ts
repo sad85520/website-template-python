@@ -12,6 +12,8 @@ export const useUiStore = defineStore('ui', () => {
 
   function setTheme(newTheme: 'light' | 'dark') {
     theme.value = newTheme
+    // 透過操作 <html> 元素的 class 切換 Tailwind CSS 的 dark mode，
+    // 必須同步更新 DOM（而非僅更新 store），因為 Tailwind 的 dark variant 依賴此 class 的存在。
     document.documentElement.classList.toggle('dark', newTheme === 'dark')
   }
 

@@ -147,6 +147,8 @@ class TestLogout:
             {"email": user.email, "password": "Password123!"},
             format="json",
         )
+        # force_authenticate 覆寫請求的認證狀態，繞過 JWT 驗證，
+        # 確保測試聚焦在 logout 邏輯本身，而非 JWT 的有效性。
         client.force_authenticate(user=user)
         response = client.post(reverse("auth-logout"))
 

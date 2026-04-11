@@ -30,17 +30,23 @@ class User(AbstractBaseUser, PermissionsMixin):
         USER = "user", "User"
         ADMIN = "admin", "Admin"
 
+    # 使用 UUID 作為主鍵可防止外部透過遞增 ID 推測使用者總數或枚舉帳號。
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email = models.EmailField(unique=True, max_length=256)
     display_name = models.CharField(max_length=100)
+    # role 欄位用於應用層授權（如 IsAdminUser）；is_staff 則控制 Django Admin 後台存取權限，兩者職責不同，不可混用。
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.USER)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    # 暴力破解防護欄位：連續登入失敗達閾值時，設定 lockout_until 鎖定帳號。
+    # 這兩個欄位由 services.login_user 維護，其他地方不應直接修改。
     failed_login_attempts = models.IntegerField(default=0)
     lockout_until = models.DateTimeField(null=True, blank=True)
 
+    # 改用 email 作為登入憑證，USERNAME_FIELD 必須對應到一個 unique=True 欄位，
+    # REQUIRED_FIELDS 則是執行 createsuperuser 時額外要求輸入的欄位。
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["display_name"]
 

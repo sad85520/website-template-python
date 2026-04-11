@@ -10,6 +10,8 @@ class UserFactory(DjangoModelFactory):
 
     email = factory.Sequence(lambda n: f"user{n}@example.com")
     display_name = factory.Faker("name")
+    # PostGenerationMethodCall 會在物件建立後呼叫 set_password()，
+    # 確保密碼以雜湊形式存入 DB，而非明文——與真實使用者建立流程一致。
     password = factory.PostGenerationMethodCall("set_password", "Password123!")
     role = User.Role.USER
     is_active = True

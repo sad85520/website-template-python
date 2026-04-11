@@ -6,6 +6,9 @@ DEBUG = False
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
+# HSTS 一旦設定，瀏覽器會在指定秒數內強制使用 HTTPS。
+# 初次部署時應先用較短的值（如 3600），確認無問題後再提升至 31536000，
+# 否則一旦 HTTPS 設定有誤，使用者在 HSTS 有效期內將無法訪問網站。
 SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 

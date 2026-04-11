@@ -45,7 +45,11 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    # CSPMiddleware 必須緊接在 SecurityMiddleware 之後、CorsMiddleware 之前，
+    # 才能確保 Content-Security-Policy header 在所有回應中都被設定。
     "csp.middleware.CSPMiddleware",
+    # CorsMiddleware 必須排在 SessionMiddleware 之前，
+    # 才能在 OPTIONS preflight 請求上直接回傳 CORS headers，不觸發 session 開啟。
     "corsheaders.middleware.CorsMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -144,10 +148,16 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(
         days=config("JWT_REFRESH_TOKEN_LIFETIME_DAYS", default=7, cast=int)
     ),
+    # 每次換發 refresh token 時，舊 token 必須同步加入黑名單，
+    # 否則舊 token 在過期前仍可換發新 token，造成 token 無法真正撤銷。
     "ROTATE_REFRESH_TOKENS": True,
     "BLACKLIST_AFTER_ROTATION": True,
+    # 不更新 last_login，以避免每次 token 刷新都觸發一次 DB write，
+    # 對高頻 API 服務會產生不必要的寫入壓力。
     "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",
+    # 使用獨立的 JWT_SIGNING_KEY 可讓 JWT 簽名密鑰與 Django SESSION_KEY 解耦；
+    # 若只有 SECRET_KEY 洩漏，攻擊者仍無法偽造 JWT。
     "SIGNING_KEY": config("JWT_SIGNING_KEY", default=SECRET_KEY),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
@@ -164,7 +174,10 @@ SPECTACULAR_SETTINGS = {
 }
 
 # Refresh Token Cookie
+# refresh token 存放於 HttpOnly cookie，而非 localStorage，
+# 可防止 XSS 腳本直接讀取 token；SameSite=Strict 則進一步阻擋 CSRF 跨站請求攜帶此 cookie。
 REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
+# 開發環境（DEBUG=True）不強制 Secure，讓 http://localhost 也能正常運作。
 REFRESH_TOKEN_COOKIE_SECURE = not DEBUG
 REFRESH_TOKEN_COOKIE_HTTPONLY = True
 REFRESH_TOKEN_COOKIE_SAMESITE = "Strict"

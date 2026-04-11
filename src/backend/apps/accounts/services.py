@@ -42,14 +42,16 @@ def login_user(
 
     repo = user_repo or _user_repo
 
-    # Check if the account exists and is currently locked before authenticating.
+    # 鎖定檢查必須在 authenticate() 之前進行：若先呼叫 authenticate()，
+    # Django 內建機制會在密碼正確時放行，導致已鎖定帳號仍能登入。
     candidate = repo.get_by_email_for_auth(email)
     if candidate is not None and candidate.lockout_until and candidate.lockout_until > timezone.now():
         raise AuthenticationFailed("Account is temporarily locked. Try again later.")
 
     user = authenticate(username=email, password=password)
     if user is None:
-        # Increment failed attempts on the candidate user if they exist.
+        # 無論是帳號不存在還是密碼錯誤，統一回傳相同訊息，
+        # 防止攻擊者透過錯誤訊息的差異來枚舉有效帳號。
         if candidate is not None:
             candidate.failed_login_attempts += 1
             if candidate.failed_login_attempts >= 5:
@@ -79,8 +81,11 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
     repo = _user_repo
     refresh = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
     new_access_token = str(refresh.access_token)
+    # 必須先取出 access_token，再呼叫 blacklist()，
+    # 因為 blacklist() 會讓此 refresh token 物件失效，後續存取 claims 可能拋出例外。
     refresh.blacklist()
 
+    # 重新查詢使用者以確保帳號仍然存在且有效（例如帳號可能已在 token 發出後被停用）。
     user = repo.get_by_id(refresh["user_id"])
     if user is None:
         raise ValueError("User not found for refresh token")
@@ -96,7 +101,9 @@ def logout_user(refresh_token_str: str) -> None:
         refresh = RefreshToken(refresh_token_str)  # type: ignore[arg-type]
         refresh.blacklist()
     except Exception:
-        pass  # 若 token 已過期或無效，靜默忽略
+        # 靜默忽略：logout 是使用者主動發起的操作，
+        # 若 token 已失效或不合法，視同已登出，不需要向前端回報錯誤。
+        pass
 
 
 def get_access_token_lifetime_seconds() -> int:
@@ -110,5 +117,7 @@ def build_refresh_cookie_options(secure: bool) -> dict[str, object]:
         "httponly": True,
         "secure": secure,
         "samesite": "Strict",
+        # max_age 與 REFRESH_TOKEN_LIFETIME 保持一致，確保 cookie 不會比 token 早或晚過期，
+        # 否則 cookie 可能已消失但 token 黑名單中仍保留舊記錄，造成邏輯不一致。
         "max_age": int(lifetime.total_seconds()),
     }

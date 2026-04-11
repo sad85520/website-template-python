@@ -7,11 +7,15 @@ from rest_framework.response import Response
 
 class StandardPagination(PageNumberPagination):
     page_size = 20
+    # page_size_query_param 允許客戶端透過 ?limit= 自訂每頁筆數，
+    # max_page_size 設定上限防止大量資料一次性回傳造成效能問題。
     page_size_query_param = "limit"
     max_page_size = 100
     page_query_param = "page"
 
     def get_paginated_response(self, data: Any) -> Response:
+        # 覆寫此方法以產生符合專案統一 ApiResponse 格式的回應，
+        # 同時必須覆寫 get_paginated_response_schema，使 drf-spectacular 產生正確的 OpenAPI schema。
         assert self.page is not None
         return Response(
             {

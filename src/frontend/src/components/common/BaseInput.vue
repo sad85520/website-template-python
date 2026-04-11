@@ -34,5 +34,8 @@
 
   defineEmits<{ 'update:modelValue': [value: string] }>()
 
+  // 為每個 input 產生唯一 ID 以正確建立 <label for="..."> 關聯，
+  // 確保點擊 label 能聚焦對應的 input（無障礙需求）。
+  // 使用亂數而非 prop 是為了讓元件自給自足，呼叫端無需手動傳入 id。
   const inputId = computed(() => `input-${Math.random().toString(36).slice(2, 9)}`)
 </script>

@@ -39,7 +39,8 @@ urlpatterns = [
     path("api/health/", include("health_check.urls")),
 ]
 
-# OpenAPI schema JSON + Scalar UI，僅開發環境掛載
+# OpenAPI schema JSON + Scalar UI，僅開發環境掛載。
+# 生產環境不掛載是為了避免 API 結構對外暴露，減少攻擊面。
 if settings.DEBUG:
     urlpatterns += [
         path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
