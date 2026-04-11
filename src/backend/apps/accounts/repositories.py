@@ -4,9 +4,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Protocol, runtime_checkable
 
 from django.contrib.auth import get_user_model
-from django.db import models as db_models
 
 if TYPE_CHECKING:
+    from django.db import models as db_models
+
     from .models import User
 
 UserModel: type[User] = get_user_model()  # type: ignore[assignment]
