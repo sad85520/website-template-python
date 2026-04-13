@@ -4,10 +4,48 @@ from typing import Any
 
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
+from django.db.models import Q
 
 
-class UserManager(BaseUserManager["User"]):
-    """自訂使用者管理器，以 email 作為主要識別欄位。"""
+class UserQuerySet(models.QuerySet["User"]):
+    """封裝使用者常用查詢邏輯，透過 ``BaseUserManager.from_queryset`` 暴露給 ``User.objects``。
+
+    將查詢邏輯放在 QuerySet 而非 Repository 層的理由見
+    ``docs/adr/ADR-002-remove-repository-layer.md``：直接沿用 Django ORM 的可鏈結 QuerySet，
+    避免重複包裝 ``.filter().first()`` 等瑣碎呼叫，同時保留單一職責與可測試性。
+    """
+
+    def get_by_email(self, email: str) -> "User | None":
+        """以 email 查詢使用者，不存在則回傳 None（避免呼叫端處理 DoesNotExist）。"""
+        return self.filter(email=email).first()
+
+    def get_by_email_for_auth(self, email: str) -> "User | None":
+        """
+        authenticate() 之前取得完整帳號狀態（含停用帳號），用於檢查 lockout_until。
+
+        與 ``get_by_email`` 刻意分開：Django 的 authenticate() 只處理 is_active 帳號，
+        若以此替代將無法判斷 lockout 狀態，造成鎖定機制失效。
+        """
+        return self.filter(email=email).first()
+
+    def search(self, query: str) -> "UserQuerySet":
+        """依關鍵字比對 email 與 display_name；空字串回傳全部。"""
+        if not query:
+            return self.all()
+        # 使用 Q 物件組合 OR 條件，單次查詢避免 QuerySet 聯集可能造成的重複資料。
+        return self.filter(Q(email__icontains=query) | Q(display_name__icontains=query)).distinct()
+
+
+# ``BaseUserManager.from_queryset(UserQuerySet)`` 會自動把 ``UserQuerySet`` 上的查詢方法
+# 複製到 Manager 類別上，避免手動 delegate 造成的重複樣板；
+# ``# type: ignore[misc]`` 為 django-stubs 對動態建立之基底類別的已知限制（issue #738），
+# 集中在此一行，讓其他檔案完全不需要 ignore。
+class UserManager(BaseUserManager["User"].from_queryset(UserQuerySet)):  # type: ignore[misc]
+    """自訂使用者管理器，以 email 作為主要識別欄位。
+
+    查詢方法（get_by_email、search 等）由 ``UserQuerySet`` 透過 ``from_queryset`` 自動繼承，
+    本類別只保留與 ``BaseUserManager`` 合約相關的建立/管理邏輯。
+    """
 
     def create_user(
         self, email: str, password: str, display_name: str = "", **extra_fields: Any
@@ -29,7 +67,9 @@ class UserManager(BaseUserManager["User"]):
         if not email:
             raise ValueError("Email is required.")
         email = self.normalize_email(email)
-        user = self.model(email=email, display_name=display_name, **extra_fields)
+        # self.model 在動態產生的 from_queryset 基底類別下會被推導為 Any；
+        # 顯式標註型別後續才能通過 strict mypy。
+        user: User = self.model(email=email, display_name=display_name, **extra_fields)
         user.set_password(password)
         user.save(using=self._db)
         return user
@@ -80,6 +120,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ["display_name"]
 
+    # 顯式標註型別是讓 mypy/django-stubs 正確推導 ``User.objects.xxx`` 回傳型別的關鍵，
+    # 若省略將 fallback 到 ``Any``，失去 QuerySet 方法的型別檢查。
     objects: UserManager = UserManager()
 
     class Meta:

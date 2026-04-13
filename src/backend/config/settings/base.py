@@ -6,6 +6,17 @@ from pathlib import Path
 
 from decouple import config
 
+# django-stubs 的 runtime patch：讓 ``QuerySet[Model]``、``Manager[Model]`` 等
+# 泛型型別在執行期可被 subscript，使同一份型別標註可同時被 mypy 與 Python runtime 接受。
+# 必須在載入任何應用程式 model 之前呼叫，放在 settings 最上方最安全。
+try:
+    import django_stubs_ext
+
+    django_stubs_ext.monkeypatch()
+except ImportError:
+    # 正式環境不安裝 dev 依賴時 django_stubs_ext 可能不存在，忽略即可。
+    pass
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY: str = config("SECRET_KEY")
