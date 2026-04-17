@@ -32,11 +32,14 @@ COPY --from=builder /app /app
 # Dummy values are used only during collectstatic and are cleared afterwards.
 ARG SECRET_KEY=build-time-dummy-secret-key-not-used-in-production
 ARG DB_PASSWORD=build-time-dummy
+ARG JWT_SIGNING_KEY=build-time-dummy-jwt-signing-key-not-used-in-production
 ENV SECRET_KEY=${SECRET_KEY} \
-    DB_PASSWORD=${DB_PASSWORD}
+    DB_PASSWORD=${DB_PASSWORD} \
+    JWT_SIGNING_KEY=${JWT_SIGNING_KEY}
 RUN python manage.py collectstatic --noinput
 ENV SECRET_KEY= \
-    DB_PASSWORD=
+    DB_PASSWORD= \
+    JWT_SIGNING_KEY=
 
 EXPOSE 8000
 
