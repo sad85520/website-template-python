@@ -156,7 +156,7 @@ class TestTokenRefresh:
 
     def test_refresh_with_expired_token(self, client: APIClient) -> None:
         """攜帶無效 refresh token 時應回傳 401。"""
-        client.cookies["refresh_token"] = "expiredtokenvalue"
+        client.cookies["refreshToken"] = "expiredtokenvalue"
         response = client.post(reverse("auth-refresh"))
         assert response.status_code == status.HTTP_401_UNAUTHORIZED
 

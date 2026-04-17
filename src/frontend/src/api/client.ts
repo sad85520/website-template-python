@@ -1,6 +1,6 @@
 import axios, { type AxiosInstance, type InternalAxiosRequestConfig } from 'axios'
 import { useAuthStore } from '@/stores/auth.store'
-import type { ApiResponse, LoginResponse } from '@/types'
+import type { LoginResponse } from '@/types'
 
 // isRefreshing 旗標搭配 refreshQueue 實作「token 刷新去重」機制：
 // 當多個請求同時收到 401 時，只讓第一個請求實際發起 refresh，
@@ -67,13 +67,13 @@ apiClient.interceptors.response.use(
     try {
       // 這裡刻意使用原始 axios 而非 apiClient 來呼叫 refresh 端點，
       // 避免 apiClient 的 response interceptor 對此請求再次觸發（造成無限遞迴）。
-      const response = await axios.post<ApiResponse<LoginResponse>>(
+      const response = await axios.post<LoginResponse>(
         `${import.meta.env.VITE_API_BASE_URL}/v1/auth/refresh`,
         {},
         { withCredentials: true }
       )
 
-      const newToken = response.data.data?.accessToken ?? ''
+      const newToken = response.data.access_token
       const authStore = useAuthStore()
       authStore.setAccessToken(newToken)
 

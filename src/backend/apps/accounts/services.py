@@ -10,6 +10,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import authenticate
+from django.db.models import F
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -62,10 +63,16 @@ def login_user(email: str, password: str) -> tuple[User, str, str]:
         # 無論是帳號不存在還是密碼錯誤，統一回傳相同訊息，
         # 防止攻擊者透過錯誤訊息的差異來枚舉有效帳號。
         if candidate is not None:
-            candidate.failed_login_attempts += 1
+            # 以 F expression 進行原子遞增，避免多個並發登入失敗請求之間的
+            # read-modify-write race condition（先讀舊值、本機 +1 再寫回會覆蓋彼此遞增）。
+            User.objects.filter(pk=candidate.pk).update(
+                failed_login_attempts=F("failed_login_attempts") + 1
+            )
+            candidate.refresh_from_db(fields=["failed_login_attempts"])
             if candidate.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
-                candidate.lockout_until = timezone.now() + LOCKOUT_DURATION
-            candidate.save(update_fields=["failed_login_attempts", "lockout_until"])
+                User.objects.filter(pk=candidate.pk).update(
+                    lockout_until=timezone.now() + LOCKOUT_DURATION
+                )
         raise AuthenticationFailed("Invalid email or password.")
     if not user.is_active:
         raise AuthenticationFailed("Account is disabled.")

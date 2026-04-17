@@ -149,6 +149,13 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
     "PAGE_SIZE": 20,
+    # Throttle classes 在 view 中以 AnonRateThrottle / UserRateThrottle 宣告，
+    # 但實際速率必須在此處以 scope → rate 的對應表設定，否則 DRF 會完全跳過限流。
+    # 格式：'<n>/<period>'，period 支援 'second' | 'minute' | 'hour' | 'day'。
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "20/minute",
+        "user": "120/minute",
+    },
 }
 
 # JWT Settings
@@ -167,9 +174,10 @@ SIMPLE_JWT = {
     # 對高頻 API 服務會產生不必要的寫入壓力。
     "UPDATE_LAST_LOGIN": False,
     "ALGORITHM": "HS256",
-    # 使用獨立的 JWT_SIGNING_KEY 可讓 JWT 簽名密鑰與 Django SESSION_KEY 解耦；
+    # 使用獨立的 JWT_SIGNING_KEY 可讓 JWT 簽名密鑰與 Django SECRET_KEY 解耦；
     # 若只有 SECRET_KEY 洩漏，攻擊者仍無法偽造 JWT。
-    "SIGNING_KEY": config("JWT_SIGNING_KEY", default=SECRET_KEY),
+    # 不提供 default：未設定時立即在啟動階段失敗，避免 production 誤用 SECRET_KEY 作為簽章密鑰。
+    "SIGNING_KEY": config("JWT_SIGNING_KEY"),
     "AUTH_HEADER_TYPES": ("Bearer",),
     "USER_ID_FIELD": "id",
     "USER_ID_CLAIM": "user_id",

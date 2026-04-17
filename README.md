@@ -59,8 +59,7 @@ website-template-python/
 │       │   └── wsgi.py / asgi.py
 │       └── apps/
 │           ├── core/                    # 跨 App 共用工具（不含業務邏輯）
-│           │   ├── responses.py         # 統一回傳格式（success_response / error_response）
-│           │   ├── exceptions.py        # AppException（業務錯誤自動轉 HTTP status）
+│           │   ├── exceptions.py        # custom_exception_handler（RFC 7807 Problem Details）
 │           │   └── pagination.py        # 共用分頁類別
 │           └── accounts/               # 使用者與認證模組
 │               ├── models.py            # Custom User + UserQuerySet / UserManager（查詢邏輯）
@@ -149,22 +148,22 @@ PostgreSQL
 
 | 工具 | 位置 | 用途 |
 |------|------|------|
-| `AppException` | `apps/core/exceptions.py` | 可預期的業務錯誤，自動轉為正確 HTTP status |
+| `custom_exception_handler` | `apps/core/exceptions.py` | 全域例外處理，輸出 RFC 7807 Problem Details |
 | `StandardPagination` | `apps/core/pagination.py` | 分頁（`?page=1&page_size=20`） |
 | `UserQuerySet` / `UserManager` | `apps/accounts/models.py` | 使用者查詢入口（`User.objects.get_by_email(...)`、`.search(...)`） |
 | 登入 / 登出 / Refresh | `apps/accounts/services.py` | 業務邏輯（範本已實作） |
 
-> 回傳格式採用 DRF 原生慣例，不再額外包 envelope，詳見 [ADR-001](docs/adr/ADR-001-drf-native-response-format.md)。
+> 成功回傳採用 DRF 原生慣例、不再額外包 envelope；錯誤回傳採用 RFC 7807 Problem Details。詳見 [ADR-001](docs/adr/ADR-001-drf-native-response-format.md)。
 
 ```python
-from apps.core.exceptions import AppException
+from rest_framework.exceptions import NotFound
 from apps.accounts.models import User
 
 # View 直接回傳 DRF Response，格式維持 DRF 原生慣例
 return Response({"items": data, "total": count})
 
-# 在 Service 中拋出業務錯誤（自動對應 HTTP status）
-raise AppException("查無資料", status_code=404)
+# 在 Service 中拋出 DRF 標準例外，由 custom_exception_handler 統一轉換為 Problem Details
+raise NotFound("查無資料")
 
 # 直接透過 Manager / QuerySet 查詢，不需另行注入 Repository
 user = User.objects.get_by_email("test@example.com")

@@ -27,19 +27,26 @@ describe('useAuthStore', () => {
   })
 
   it('登入成功後更新 token 與使用者', async () => {
-    const mockUser = { id: '1', email: 'test@example.com', displayName: 'Test', role: 'user' as const, createdAt: '2024-01-01' }
+    const mockUser = {
+      id: '1',
+      email: 'test@example.com',
+      display_name: 'Test',
+      role: 'user' as const,
+      created_at: '2024-01-01',
+    }
 
     vi.mocked(authApi.login).mockResolvedValue({
-      data: { success: true, data: { accessToken: 'token123', expiresIn: 900 }, message: null, errors: null, meta: null },
+      data: { access_token: 'token123', expires_in: 900 },
     } as any)
 
     vi.mocked(authApi.getMe).mockResolvedValue({
-      data: { success: true, data: mockUser, message: null, errors: null, meta: null },
+      data: mockUser,
     } as any)
 
     const store = useAuthStore()
-    await store.login({ email: 'test@example.com', password: 'password' })
+    const result = await store.login({ email: 'test@example.com', password: 'password' })
 
+    expect(result.success).toBe(true)
     expect(store.isAuthenticated).toBe(true)
     expect(store.accessToken).toBe('token123')
     expect(store.currentUser).toEqual(mockUser)
@@ -55,7 +62,7 @@ describe('useAuthStore', () => {
   })
 
   it('登出後清除狀態', async () => {
-    vi.mocked(authApi.logout).mockResolvedValue({ data: { success: true, data: null, message: null, errors: null, meta: null } } as any)
+    vi.mocked(authApi.logout).mockResolvedValue({ data: undefined } as any)
 
     const store = useAuthStore()
     store.setAccessToken('sometoken')

@@ -1,13 +1,12 @@
-// ApiResponse 是後端所有 API 回應的統一信封格式。
-// success=true 時 data 有值、errors 為 null；
-// success=false 時 data 為 null，errors 存放欄位層級的驗證錯誤，message 存放全域錯誤訊息。
-// 兩者不會同時有值，呼叫端應先判斷 success 再存取對應欄位。
-export interface ApiResponse<T = unknown> {
-  success: boolean
-  data: T | null
-  message: string | null
-  errors: FieldError[] | null
-  meta: PaginationMeta | null
+// 後端錯誤回應採 RFC 7807 Problem Details 格式（Content-Type: application/problem+json），
+// 成功回應則直接為 DRF 原生序列化資料，不額外包裝信封。
+// 參考：apps/core/exceptions.py 與 docs/adr/ADR-001-drf-native-response-format.md。
+export interface ProblemDetails {
+  type: string
+  title: string
+  status: number
+  detail?: string
+  errors?: FieldError[]
 }
 
 export interface FieldError {
@@ -15,15 +14,16 @@ export interface FieldError {
   message: string
 }
 
-export interface PaginationMeta {
-  total: number
-  page: number
-  limit: number
-  totalPages: number
+// DRF 分頁使用 PageNumberPagination，回應格式為 { count, next, previous, results }。
+export interface PaginatedResponse<T> {
+  count: number
+  next: string | null
+  previous: string | null
+  results: T[]
 }
 
 export interface PaginationQuery {
   page?: number
-  limit?: number
+  page_size?: number
   search?: string
 }

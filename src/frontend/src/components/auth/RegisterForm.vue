@@ -1,10 +1,10 @@
 <template>
   <form class="space-y-4" @submit.prevent="handleSubmit">
     <BaseInput
-      v-model="form.displayName"
+      v-model="form.display_name"
       label="顯示名稱"
       placeholder="你的名字"
-      :error="errors.displayName"
+      :error="errors.display_name"
       required
     />
     <BaseInput
@@ -36,13 +36,13 @@
 
   const { register, isLoading } = useAuth()
 
-  const form = reactive({ email: '', password: '', displayName: '' })
-  const errors = reactive<{ email?: string; password?: string; displayName?: string }>({})
+  const form = reactive({ email: '', password: '', display_name: '' })
+  const errors = reactive<{ email?: string; password?: string; display_name?: string }>({})
 
   async function handleSubmit() {
     errors.email = undefined
     errors.password = undefined
-    errors.displayName = undefined
+    errors.display_name = undefined
 
     const result = await register(form)
 
@@ -50,7 +50,7 @@
       result.errors.forEach((e: FieldError) => {
         if (e.field === 'email') errors.email = e.message
         if (e.field === 'password') errors.password = e.message
-        if (e.field === 'displayName') errors.displayName = e.message
+        if (e.field === 'display_name') errors.display_name = e.message
       })
     }
   }

@@ -1,7 +1,26 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+import { isAxiosError } from 'axios'
 import { authApi } from '@/api'
-import type { UserDto, LoginRequest, RegisterRequest } from '@/types'
+import type { UserDto, LoginRequest, RegisterRequest, ProblemDetails, FieldError } from '@/types'
+
+export interface AuthResult {
+  success: boolean
+  message?: string
+  errors?: FieldError[]
+}
+
+function extractProblem(error: unknown): AuthResult {
+  if (isAxiosError<ProblemDetails>(error) && error.response?.data) {
+    const problem = error.response.data
+    return {
+      success: false,
+      message: problem.detail ?? problem.title,
+      errors: problem.errors,
+    }
+  }
+  return { success: false, message: '網路錯誤，請稍後再試' }
+}
 
 export const useAuthStore = defineStore('auth', () => {
   // access token 僅保存在記憶體（ref）中，不存入 localStorage，
@@ -12,42 +31,44 @@ export const useAuthStore = defineStore('auth', () => {
 
   const isAuthenticated = computed(() => !!accessToken.value)
 
-  function setAccessToken(token: string) {
+  function setAccessToken(token: string): void {
     accessToken.value = token
   }
 
-  function clearAuth() {
+  function clearAuth(): void {
     accessToken.value = null
     currentUser.value = null
   }
 
-  async function login(credentials: LoginRequest) {
+  async function login(credentials: LoginRequest): Promise<AuthResult> {
     isLoading.value = true
     try {
       const response = await authApi.login(credentials)
-      if (response.data.success && response.data.data) {
-        accessToken.value = response.data.data.accessToken
-        // 登入回應僅包含 token，不包含使用者資料；
-        // 需額外呼叫 /users/me 以取得 currentUser，才能讓 UI 顯示姓名、角色等資訊。
-        await fetchCurrentUser()
-      }
-      return response.data
+      accessToken.value = response.data.access_token
+      // 登入回應僅包含 token，不包含使用者資料；
+      // 需額外呼叫 /users/me 以取得 currentUser，才能讓 UI 顯示姓名、角色等資訊。
+      await fetchCurrentUser()
+      return { success: true }
+    } catch (error: unknown) {
+      return extractProblem(error)
     } finally {
       isLoading.value = false
     }
   }
 
-  async function register(data: RegisterRequest) {
+  async function register(data: RegisterRequest): Promise<AuthResult> {
     isLoading.value = true
     try {
-      const response = await authApi.register(data)
-      return response.data
+      await authApi.register(data)
+      return { success: true }
+    } catch (error: unknown) {
+      return extractProblem(error)
     } finally {
       isLoading.value = false
     }
   }
 
-  async function logout() {
+  async function logout(): Promise<void> {
     try {
       await authApi.logout()
     } finally {
@@ -57,11 +78,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function fetchCurrentUser() {
+  async function fetchCurrentUser(): Promise<void> {
     const response = await authApi.getMe()
-    if (response.data.success && response.data.data) {
-      currentUser.value = response.data.data
-    }
+    currentUser.value = response.data
   }
 
   async function tryRefreshToken(): Promise<boolean> {
@@ -69,12 +88,9 @@ export const useAuthStore = defineStore('auth', () => {
     // 成功時回傳 true（代表使用者仍有效登入），失敗時清除殘留狀態並回傳 false。
     try {
       const response = await authApi.refresh()
-      if (response.data.success && response.data.data) {
-        accessToken.value = response.data.data.accessToken
-        await fetchCurrentUser()
-        return true
-      }
-      return false
+      accessToken.value = response.data.access_token
+      await fetchCurrentUser()
+      return true
     } catch {
       clearAuth()
       return false
