@@ -29,6 +29,9 @@ build/
 .coverage
 htmlcov/
 .tox/
+.venv/
+venv/
+src/backend/.venv/
 
 # ========== Django ==========
 src/backend/staticfiles/

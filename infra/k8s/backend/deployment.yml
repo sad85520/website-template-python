@@ -18,6 +18,13 @@ spec:
           image: ghcr.io/sad85520/website-template-python/backend:sha-9bdb88a
           ports:
             - containerPort: 8000
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: [ALL]
           envFrom:
             - configMapRef:
                 name: app-config
@@ -52,7 +59,7 @@ spec:
             periodSeconds: 30
           readinessProbe:
             httpGet:
-              path: /api/health/
+              path: /api/health/ready/
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 10

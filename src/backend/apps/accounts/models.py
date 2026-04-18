@@ -16,15 +16,19 @@ class UserQuerySet(models.QuerySet["User"]):
     """
 
     def get_by_email(self, email: str) -> "User | None":
-        """以 email 查詢使用者，不存在則回傳 None（避免呼叫端處理 DoesNotExist）。"""
-        return self.filter(email=email).first()
+        """以 email 查詢使用中的使用者；停用或鎖定帳號不會回傳。
+
+        一般 API 路徑（資料查詢、管理介面）應走此方法 — 對齊 Django authenticate()
+        的 is_active 語意，避免意外將停用帳號暴露給呼叫端。
+        需要判斷 lockout / 帳號狀態時，改用 ``get_by_email_for_auth``。
+        """
+        return self.filter(email=email, is_active=True).first()
 
     def get_by_email_for_auth(self, email: str) -> "User | None":
-        """
-        authenticate() 之前取得完整帳號狀態（含停用帳號），用於檢查 lockout_until。
+        """authenticate() 之前取得完整帳號狀態（含停用帳號），用於檢查 lockout_until。
 
-        與 ``get_by_email`` 刻意分開：Django 的 authenticate() 只處理 is_active 帳號，
-        若以此替代將無法判斷 lockout 狀態，造成鎖定機制失效。
+        與 ``get_by_email`` 刻意分開：authenticate() 僅處理 is_active 帳號，
+        若用 ``get_by_email`` 取代將無法在登入前查詢 lockout 狀態，造成鎖定機制失效。
         """
         return self.filter(email=email).first()
 
@@ -108,7 +112,9 @@ class User(AbstractBaseUser, PermissionsMixin):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.USER)
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
-    created_at = models.DateTimeField(auto_now_add=True)
+    # created_at 加 db_index 是因為 Meta.ordering = ["-created_at"] 會讓每次
+    # 未明確指定排序的 QuerySet 都對此欄位排序；沒有索引時大資料量會觸發全表排序。
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
     # 暴力破解防護欄位：連續登入失敗達閾值時，設定 lockout_until 鎖定帳號。
     # 這兩個欄位由 services.login_user 維護，其他地方不應直接修改。

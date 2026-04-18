@@ -80,7 +80,11 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function fetchCurrentUser(): Promise<void> {
     const response = await authApi.getMe()
-    currentUser.value = response.data
+    // DRF 的 /me 200 理論上必回傳 UserDto，但 backend 若因為 schema 調整暫時回空或
+    // 異常結構時，先以 null guard 保護前端 currentUser 狀態不被污染。
+    if (response.data) {
+      currentUser.value = response.data
+    }
   }
 
   async function tryRefreshToken(): Promise<boolean> {

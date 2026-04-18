@@ -59,6 +59,9 @@ make logs          # 查看即時 logs
 | `SECRET_KEY` | 是 | Django SECRET_KEY，50 字元以上隨機字串 |
 | `DB_PASSWORD` | 是 | PostgreSQL 密碼 |
 | `JWT_SIGNING_KEY` | 是 | JWT 簽署金鑰，至少 32 字元 |
+| `ALLOWED_HOSTS` | 開發預設 `localhost,127.0.0.1` | 生產未設即 fail-fast（避免 host-header 攻擊） |
+
+> 生產專用覆寫（`REDIS_URL` / `HSTS_SECONDS` / `HSTS_PRELOAD` / `LANGUAGE_CODE` / `TIME_ZONE` / `GUNICORN_WORKERS` / `GUNICORN_TIMEOUT`）見 [deployment.md](deployment.md#生產環境變數)。
 
 ## 新增 Django App
 

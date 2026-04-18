@@ -26,7 +26,7 @@ class Migration(migrations.Migration):
                 ('role', models.CharField(choices=[('user', 'User'), ('admin', 'Admin')], default='user', max_length=20)),
                 ('is_active', models.BooleanField(default=True)),
                 ('is_staff', models.BooleanField(default=False)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
+                ('created_at', models.DateTimeField(auto_now_add=True, db_index=True)),
                 ('updated_at', models.DateTimeField(auto_now=True)),
                 ('failed_login_attempts', models.IntegerField(default=0)),
                 ('lockout_until', models.DateTimeField(blank=True, null=True)),

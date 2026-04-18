@@ -126,8 +126,8 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Internationalization
-LANGUAGE_CODE = "zh-hant"
-TIME_ZONE = "Asia/Taipei"
+LANGUAGE_CODE = config("LANGUAGE_CODE", default="en-us")
+TIME_ZONE = config("TIME_ZONE", default="UTC")
 USE_I18N = True
 USE_TZ = True
 
@@ -136,6 +136,18 @@ STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Cache
+# DRF throttling 以 cache 為狀態儲存；DEFAULT_THROTTLE_RATES 已設定，
+# 若未定義 CACHES，Django 會退回 per-process LocMemCache，在多 gunicorn worker
+# 下各 worker 有獨立計數器，使限流額度實質變成 N 倍。
+# 預設以 LocMemCache 撐開發環境；production.py 必須 override 為共享快取（Redis/Memcached）。
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        "LOCATION": "web-template-dev",
+    }
+}
 
 # Django REST Framework
 REST_FRAMEWORK = {

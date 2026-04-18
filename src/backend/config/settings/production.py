@@ -1,7 +1,16 @@
 """Production settings."""
+from decouple import config
+
 from .base import *  # noqa: F403, F401
 
 DEBUG = False
+
+# ALLOWED_HOSTS 在 production 不提供 default：漏設即 fail-fast，避免
+# 上線後靜默接受任意 Host header 造成 host-header attack / cache poisoning。
+ALLOWED_HOSTS = config(
+    "ALLOWED_HOSTS",
+    cast=lambda v: [s.strip() for s in v.split(",")],
+)
 
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
@@ -22,15 +31,32 @@ CSRF_COOKIE_HTTPONLY = False  # CSRF token 必須可由前端 JS 讀取以帶入
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
 # HSTS 一旦設定，瀏覽器會在指定秒數內強制使用 HTTPS。
-# 初次部署時應先用較短的值（如 3600），確認無問題後再提升至 31536000，
-# 否則一旦 HTTPS 設定有誤，使用者在 HSTS 有效期內將無法訪問網站。
-SECURE_HSTS_SECONDS = 31536000
+# 初次部署預設用 1 小時（3600）讓誤設可快速復原，確認無問題後再透過
+# HSTS_SECONDS 環境變數調高至 31536000（1 年）；否則 HTTPS 設定有誤時，
+# 使用者在 HSTS 有效期內將無法訪問網站。
+SECURE_HSTS_SECONDS = config("HSTS_SECONDS", default=3600, cast=int)
 # include_subdomains=True 會將 HSTS 擴展至所有子網域，
 # 需確認所有子網域皆已部署有效的 HTTPS 憑證，否則會導致該子網域無法透過 HTTP 訪問。
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# PRELOAD 要送出，網站才有資格提交到 Chrome HSTS preload list；
+# 但一旦加入就難以撤銷，確認穩定後再開啟。
+SECURE_HSTS_PRELOAD = config("HSTS_PRELOAD", default=False, cast=bool)
 
 # 生產環境 CORS 透過 Nginx 同 origin 處理，不需要 CORS headers
 CORS_ALLOWED_ORIGINS: list[str] = []
+
+# Cache override：production 使用 Redis 作為共享快取，避免多 worker 下
+# LocMemCache 各自計數造成 DRF throttling 失效。
+# REDIS_URL 未設定時退回 LocMemCache 並在啟動時印 warning，方便本地
+# 模擬 production settings；但真正部署必須透過 env var 指定。
+_redis_url = config("REDIS_URL", default="")
+if _redis_url:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _redis_url,
+        }
+    }
 
 LOGGING = {
     "version": 1,

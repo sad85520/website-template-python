@@ -353,6 +353,8 @@ tests/
 | `GET /api/health/` | Liveness — 服務是否存活 |
 | `GET /api/health/ready/` | Readiness — 資料庫是否可連線 |
 
+> 兩個 image 皆 non-root（backend `appuser` UID 1000、frontend `nginx`），且 frontend container 對外監聽 8080（k8s Service 仍映射到 80）。生產環境變數（`ALLOWED_HOSTS` fail-fast、`REDIS_URL`、`HSTS_SECONDS` 等）與 k8s `securityContext` 細節見 [docs/deployment.md](docs/deployment.md)。
+
 ## API 文件
 
 開發環境下，Scalar UI 可在 `/api/scalar/` 查看所有 API（由 drf-spectacular 自動產生 OpenAPI schema）。

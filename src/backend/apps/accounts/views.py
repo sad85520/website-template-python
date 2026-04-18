@@ -144,9 +144,11 @@ class MeView(APIView):
     @extend_schema(responses={200: UserSerializer})
     def get(self, request: Request) -> Response:
         """回傳目前已驗證使用者的資料。"""
-        # assert 用於型別窄化（type narrowing）：IsAuthenticated 已保證 request.user 不是匿名使用者，
-        # 此處協助靜態分析工具（mypy）推斷出正確型別，而非作為執行期防衛。
-        assert isinstance(request.user, User)
+        # IsAuthenticated 已保證 request.user 不是匿名使用者；此處顯式 guard 同時做
+        # 型別窄化（讓 mypy 推斷出 User）並保留 runtime 防衛 — assert 在 `python -O`
+        # 會被移除，不適合作為 production control flow。
+        if not isinstance(request.user, User):
+            raise AuthenticationFailed("Authenticated user is required.")
         return Response(UserSerializer(request.user).data, status=status.HTTP_200_OK)
 
 
