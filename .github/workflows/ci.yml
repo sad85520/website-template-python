@@ -50,13 +50,22 @@ jobs:
       run:
         working-directory: src/backend
 
+    # 以下 env 值皆為 CI job 壽命內的 throwaway credentials：
+    #   - PG service container 只活在這個 job 內，job 結束即銷毀，不對外開 port
+    #   - Django SECRET_KEY / JWT_SIGNING_KEY 只用於跑測試，不簽任何真實 token
+    # 命名刻意帶 `ci-*-not-used-in-production` 字樣：
+    #   (1) 讓 gitleaks / secret-scanner 掃到時憑 allow-list 規則豁免，
+    #       不會誤判為「生產密碼洩漏」；
+    #   (2) 讓讀 workflow 的人一眼看出語意，不會誤抄到其他環境。
+    # 若未來改成真正的 secret（例如跑 E2E 需要 SaaS test account），請移到
+    # Repository Settings → Secrets 以 `secrets.XXX` 引用，而非在此明文填入。
     services:
       postgres:
         image: postgres:18-alpine
         env:
           POSTGRES_DB: test_db
           POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: testpassword
+          POSTGRES_PASSWORD: ci-only-password-not-for-any-real-system
         ports:
           - 5432:5432
         options: >-
@@ -70,7 +79,7 @@ jobs:
       SECRET_KEY: ci-secret-key-not-used-in-production
       DB_NAME: test_db
       DB_USER: postgres
-      DB_PASSWORD: testpassword
+      DB_PASSWORD: ci-only-password-not-for-any-real-system
       DB_HOST: localhost
       DB_PORT: "5432"
       JWT_SIGNING_KEY: ci-jwt-key-not-used-in-production-32chars
