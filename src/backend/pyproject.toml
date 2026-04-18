@@ -26,6 +26,9 @@ dev = [
     "mypy>=1.13,<1.20",
     "django-stubs[compatible-mypy]>=6.0,<7.0",
     "djangorestframework-stubs>=3.15,<4.0",
+    # bandit：靜態安全掃描（hardcoded secret、unsafe yaml.load、shell=True 等）。
+    # 跟 ruff 的 S 系列規則有重疊但不完全等價，bandit 的 Django 專屬規則較完整。
+    "bandit>=1.7,<2.0",
 ]
 
 [tool.ruff]
@@ -69,3 +72,12 @@ addopts = "--cov=apps --cov-report=term-missing --cov-fail-under=80"
 [tool.coverage.run]
 source = ["apps"]
 omit = ["*/migrations/*", "*/tests/*"]
+
+[tool.bandit]
+# 掃 apps/ 和 config/，跳過 tests/（fixture 常有故意 hardcoded 密碼）
+# 與 migrations/（Django 自動生成）。
+exclude_dirs = ["tests", "migrations", ".venv"]
+# B101 assert_used：tests 用 assert 是 pytest 標準，若 apps/ 裡要 assert
+# 控制流建議改 raise（見 audit P2 的 assert isinstance 問題）。
+# B104 hardcoded_bind_all_interfaces：容器內 0.0.0.0 是正常，跳過。
+skips = ["B101", "B104"]

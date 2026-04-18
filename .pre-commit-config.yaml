@@ -1,0 +1,57 @@
+# Pre-commit hooks — 本機在 git commit 前自動跑的檢查。
+# 目的：讓 lint/format/security 的錯在提交前就被擋下，不是等到 CI red 才發現。
+#
+# 安裝（per clone 一次）：
+#   pipx install pre-commit  # 或 uv tool install pre-commit
+#   pre-commit install       # 裝 .git/hooks/pre-commit
+#
+# 所有 hook 刻意都 `pass_filenames: false` + 指定 working-directory：src/backend
+# 是 nested package（uv project），工具直接對整個 sub-project 跑效果比 per-file
+# 穩定（ruff 需要看 pyproject.toml，mypy 需要 django-stubs 的完整模組圖）。
+#
+# hook 失敗的修法：
+#   - ruff check 失敗：`cd src/backend && uv run ruff check --fix .`
+#   - ruff format 失敗：`cd src/backend && uv run ruff format .`
+#   - mypy 失敗：依錯誤訊息補 type annotation / ignore comment
+#   - bandit 失敗：評估是否為實際風險；確定誤判再加 `# nosec BXXX` 與理由
+repos:
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check (backend)
+        entry: bash -c 'cd src/backend && uv run ruff check .'
+        language: system
+        pass_filenames: false
+        files: ^src/backend/.*\.py$
+
+      - id: ruff-format
+        name: ruff format (backend)
+        entry: bash -c 'cd src/backend && uv run ruff format --check .'
+        language: system
+        pass_filenames: false
+        files: ^src/backend/.*\.py$
+
+      - id: mypy
+        name: mypy (backend)
+        entry: bash -c 'cd src/backend && uv run mypy . --ignore-missing-imports'
+        language: system
+        pass_filenames: false
+        files: ^src/backend/.*\.py$
+
+      - id: bandit
+        name: bandit (backend)
+        entry: bash -c 'cd src/backend && uv run bandit -r apps config -c pyproject.toml'
+        language: system
+        pass_filenames: false
+        files: ^src/backend/.*\.py$
+
+  # 通用檢查：不限定 Python，避免 commit 到意外內容
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: check-merge-conflict

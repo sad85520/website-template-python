@@ -12,10 +12,7 @@ from apps.accounts.models import User
 
 from .factories import UserFactory
 
-
-@pytest.fixture
-def client() -> APIClient:
-    return APIClient()
+# `client` fixture 來自 src/backend/conftest.py（project-wide）。
 
 
 @pytest.mark.django_db

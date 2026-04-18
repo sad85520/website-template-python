@@ -24,9 +24,31 @@ cd src/frontend && pnpm install && cd ../..
 # 3. 啟動服務
 make dev-build
 
-# 3. 套用 Migration（首次啟動）
+# 4. 套用 Migration（首次啟動）
 make migrate
+
+# 5. 安裝 pre-commit hooks（本機在 git commit 前自動跑 ruff + mypy + bandit）
+pipx install pre-commit  # 或 `uv tool install pre-commit`
+pre-commit install
 ```
+
+## Pre-commit hooks
+
+設定檔見 `.pre-commit-config.yaml`，包含：
+
+- `ruff check` / `ruff format --check`：lint + 格式
+- `mypy`：型別檢查（含 django-stubs）
+- `bandit`：靜態安全掃描（hardcoded secret、unsafe yaml.load 等）
+- 通用檢查：trailing whitespace、EOF newline、yaml 合法性、大檔（>500 KB）
+
+執行方式：
+```bash
+pre-commit run --all-files   # 掃所有檔案
+pre-commit run               # 只掃 staged 檔
+git commit ...               # 自動觸發
+```
+
+hook 失敗後：依錯誤訊息修、`git add` 重跑；不建議用 `--no-verify` 繞過，CI 也會攔下來。
 
 ## 服務端點
 
