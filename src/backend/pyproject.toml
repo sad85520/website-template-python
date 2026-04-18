@@ -40,6 +40,14 @@ ignore = ["E501"]
 [tool.ruff.lint.isort]
 known-first-party = ["config", "apps"]
 
+# ruff format 取代 black：行為相容 black，但不需額外裝 black 也不需多跑一輪。
+# 統一用 `uv run ruff format .` + `uv run ruff check .`，CI 與本機都走同一條路。
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+skip-magic-trailing-comma = false
+
 [tool.mypy]
 python_version = "3.12"
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]

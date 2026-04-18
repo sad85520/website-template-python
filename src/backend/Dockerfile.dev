@@ -1,3 +1,10 @@
+# Dev image：僅供 docker-compose.yml（非 prod overlay）使用。
+# 與 prod Dockerfile 的差異：
+#   - 不建 app 程式碼進 image：compose 以 `./src/backend:/app` bind-mount
+#     蓋上來，讓編輯器改 .py 檔後 Django runserver 能即時 reload。
+#   - 不建立 non-root user：dev 方便性優先，檔案權限直接沿用 host。
+#   - 使用 `python manage.py runserver`，不走 gunicorn。
+# 如需 prod image（non-root + gunicorn + collectstatic），請用 src/backend/Dockerfile。
 FROM python:3.12-slim
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
@@ -9,7 +16,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     DJANGO_SETTINGS_MODULE=config.settings.development \
     PATH="/app/.venv/bin:$PATH"
 
-# Install all dependencies including dev
+# 只安裝依賴，不 COPY 程式碼——程式碼由 compose bind mount 進來。
 COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen
 

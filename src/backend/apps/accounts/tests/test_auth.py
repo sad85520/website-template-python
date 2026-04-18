@@ -12,7 +12,7 @@ from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 
-from .factories import UserFactory
+from .factories import DEFAULT_PASSWORD, UserFactory
 
 
 @pytest.fixture
@@ -42,7 +42,7 @@ class TestRegister:
     def test_register_duplicate_email(self, client: APIClient, user: User) -> None:
         """重複 Email 應觸發 RFC 7807 驗證錯誤（400）並附帶欄位錯誤陣列。"""
         url = reverse("auth-register")
-        data = {"email": user.email, "password": "Password123!", "display_name": "Dup"}
+        data = {"email": user.email, "password": DEFAULT_PASSWORD, "display_name": "Dup"}
         response = client.post(url, data, format="json")
 
         assert response.status_code == status.HTTP_400_BAD_REQUEST
@@ -72,7 +72,7 @@ class TestLogin:
     def test_login_success(self, client: APIClient, user: User) -> None:
         """正確憑證應回傳 200、access token 與 refreshToken HttpOnly cookie。"""
         response = client.post(
-            self.url, {"email": user.email, "password": "Password123!"}, format="json"
+            self.url, {"email": user.email, "password": DEFAULT_PASSWORD}, format="json"
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -140,7 +140,7 @@ class TestTokenRefresh:
         """持有有效 refreshToken cookie 時應回傳新的 access token。"""
         login_resp = client.post(
             reverse("auth-login"),
-            {"email": user.email, "password": "Password123!"},
+            {"email": user.email, "password": DEFAULT_PASSWORD},
             format="json",
         )
         assert login_resp.status_code == 200
@@ -169,7 +169,7 @@ class TestLogout:
         """已驗證使用者登出應回傳 204 並清除 refresh token。"""
         client.post(
             reverse("auth-login"),
-            {"email": user.email, "password": "Password123!"},
+            {"email": user.email, "password": DEFAULT_PASSWORD},
             format="json",
         )
         # force_authenticate 覆寫請求的認證狀態，繞過 JWT 驗證，
