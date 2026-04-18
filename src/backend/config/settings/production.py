@@ -1,6 +1,8 @@
 """Production settings."""
 from decouple import config
 
+from config.logging import build_logging_dict, configure_structlog
+
 from .base import *  # noqa: F403, F401
 
 DEBUG = False
@@ -58,20 +60,13 @@ if _redis_url:
         }
     }
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "formatters": {
-        "json": {
-            "()": "structlog.stdlib.ProcessorFormatter",
-            "processor": "structlog.processors.JSONRenderer",
-        },
-    },
-    "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
-            "formatter": "json",
-        },
-    },
-    "root": {"handlers": ["console"], "level": "INFO"},
-}
+# prod 走 JSONRenderer，方便 log aggregator（Loki、CloudWatch、Stackdriver）
+# 按 key 查詢；processor chain 與 dev 共用，避免兩邊欄位集合漂移。
+# `MinimumLevel__Default` 透過環境變數覆寫（Serilog 命名沿用，僅示意對照）：
+# 若需臨時壓低雜訊，改 `LOGGING["root"]["level"]` 或在 docker-compose.prod.yml
+# 加 `LOG_LEVEL` env 再讀入。
+configure_structlog(json_output=True)
+LOGGING = build_logging_dict(
+    json_output=True,
+    level=config("LOG_LEVEL", default="INFO"),
+)

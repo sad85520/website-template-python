@@ -99,8 +99,14 @@ TEMPLATES = [
     },
 ]
 
+# 本 template 走純 WSGI（gunicorn + Django），沒有 async view 或 websocket 需求，
+# 刻意不設 `ASGI_APPLICATION`。保留 `config/asgi.py` 是 Django 內建 boilerplate，
+# 移除會讓 `startproject` 等工具產生警告；實際 production 流量一律走 wsgi。
+# 未來若要支援 async（SSE / websocket / async view）：
+#   1) 把 `gunicorn` 換成 `uvicorn[standard]` 或 `gunicorn + uvicorn.workers.UvicornWorker`
+#   2) 這裡加回 `ASGI_APPLICATION = "config.asgi.application"`
+#   3) Dockerfile CMD 換成 uvicorn；k8s readinessProbe 不變（仍走 HTTP）
 WSGI_APPLICATION = "config.wsgi.application"
-ASGI_APPLICATION = "config.asgi.application"
 
 # Database
 DATABASES = {
