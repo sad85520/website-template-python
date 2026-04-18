@@ -31,6 +31,14 @@ K8s `frontend-service` 以 `port: 80 → targetPort: 8080` 做轉發；對外 UR
 - backend：`GET /api/health/ready/`（驗證 DB 可連線，正式流量才進來）
 - frontend：`GET /`
 
+## 生產 compose 拓撲
+
+`docker-compose.prod.yml` 是 base 的 override，以下幾個拓撲點易踩雷：
+
+- **`volumes: !reset []`**：compose v2 對 list 欄位採累加合併，單寫 `volumes: []` 不會移除 base 的 `./src/backend:/app` bind mount — 會把 image 內的 `/app`（含 `.venv`、collectstatic 產物）被源碼 mount 蓋掉，runtime 會出現 `gunicorn: not found` 之類問題。必須用 `!reset []` 才會真的清空，frontend 同理。
+- **frontend 不對外發佈 port**：base 的 `5173:5173` 是 dev 的 Vite dev server；prod 的 frontend image 是 nginx，聽 `:8080`。overlay 用 `ports: !reset []` 拔掉公開 port — 外部流量一律走 outer nginx 的 `:80`。
+- **Outer nginx 是唯一入口**：`infra/nginx/nginx.conf` 的 `location /` 以 `proxy_pass http://frontend:8080` 反代，**不從本地磁碟 serve 檔案**（容器內 `/usr/share/nginx/html` 刻意留空）。SPA fallback 與靜態快取由 frontend image 自身的 `nginx.spa.conf` 負責，避免兩層 nginx 對同一組 header 重複設定。
+
 ## 生產環境變數
 
 `config.settings.production` 的必填/可選覆寫如下，**`ALLOWED_HOSTS` 未設即 fail-fast**（避免上線後靜默接受任意 Host header）：
