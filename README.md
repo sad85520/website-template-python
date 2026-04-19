@@ -13,7 +13,7 @@
 | API 文件 | Scalar / drf-spectacular (OpenAPI) |
 | 套件管理 | uv (Python), pnpm (前端) |
 | 程式碼品質 | ESLint, Prettier, Vitest, Ruff, Mypy, pytest |
-| 基礎設施 | Docker Compose, Nginx, GitHub Actions, Kubernetes |
+| 基礎設施 | Docker Compose（主要）, Nginx, GitHub Actions, Kubernetes（選用） |
 
 ## 快速啟動
 
@@ -78,8 +78,8 @@ website-template-python/
 │
 ├── infra/
 │   ├── nginx/                           # Nginx reverse proxy 設定
-│   └── k8s/                             # Kubernetes manifests
-├── .github/workflows/                   # GitHub Actions CI/CD
+│   └── k8s/                             # Kubernetes manifests（選用，見 docs/scaling-to-k8s.md）
+├── .github/workflows/                   # GitHub Actions CI/CD（主線走 Compose；cd-k8s-*.yml 預設停用）
 ├── docs/                                # 架構、部署、開發環境說明文件
 └── scripts/                             # 工具腳本
 ```
