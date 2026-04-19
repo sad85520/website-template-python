@@ -13,6 +13,11 @@ spec:
       labels:
         app: backend
     spec:
+      # Pod-level seccomp: 以 RuntimeDefault profile 限制容器可呼叫的 syscall 集合，
+      # 明示設定避免跨叢集（k8s < 1.27 或停用 SeccompDefault 的 runtime）時預設行為不一致。
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: backend
           image: ghcr.io/sad85520/website-template-python/backend:sha-9bdb88a
@@ -22,9 +27,15 @@ spec:
             runAsNonRoot: true
             runAsUser: 1000
             allowPrivilegeEscalation: false
-            readOnlyRootFilesystem: false
+            # readOnly rootfs：RCE 發生時攻擊者無法在 image layer 之外落檔案持久化。
+            # Django + gunicorn 仍需 /tmp 可寫（Django FILE_UPLOAD_TEMP_DIR 預設 /tmp、
+            # gunicorn worker heartbeat），以 emptyDir volume 補回。
+            readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
           envFrom:
             - configMapRef:
                 name: app-config
@@ -63,3 +74,6 @@ spec:
               port: 8000
             initialDelaySeconds: 15
             periodSeconds: 10
+      volumes:
+        - name: tmp
+          emptyDir: {}
