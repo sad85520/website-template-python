@@ -4,7 +4,7 @@
       Website Template
     </h1>
     <p class="text-lg text-gray-600 mb-8">
-      Vue 3 + .NET 9 現代前後端分離架構起手式
+      Vue 3 + Django REST Framework 現代前後端分離架構起手式
     </p>
 
     <div class="flex justify-center gap-4">

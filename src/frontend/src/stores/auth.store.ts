@@ -79,11 +79,22 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function fetchCurrentUser(): Promise<void> {
-    const response = await authApi.getMe()
-    // DRF 的 /me 200 理論上必回傳 UserDto，但 backend 若因為 schema 調整暫時回空或
-    // 異常結構時，先以 null guard 保護前端 currentUser 狀態不被污染。
-    if (response.data) {
-      currentUser.value = response.data
+    // 刻意吞下錯誤：本函式會從 login / tryRefreshToken 成功路徑呼叫以補抓使用者資料，
+    // 若 /users/me 因暫時性網路或 schema 問題失敗，不應讓整個 login 被視為失敗
+    // （access token 已取得、refresh cookie 已寫入）。呼叫端可另依 currentUser === null
+    // 顯示「資料載入中」或略過個人化 UI。
+    try {
+      const response = await authApi.getMe()
+      // DRF 的 /me 200 理論上必回傳 UserDto，但 backend 若因為 schema 調整暫時回空或
+      // 異常結構時，先以 null guard 保護前端 currentUser 狀態不被污染。
+      if (response.data) {
+        currentUser.value = response.data
+      }
+    } catch (error: unknown) {
+      currentUser.value = null
+      if (import.meta.env.DEV) {
+        console.warn('fetchCurrentUser failed:', error)
+      }
     }
   }
 

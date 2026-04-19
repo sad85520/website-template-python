@@ -3,6 +3,7 @@ import { AxiosError, AxiosHeaders, type AxiosResponse } from 'axios'
 import { setActivePinia, createPinia } from 'pinia'
 import { useAuthStore } from '@/stores/auth.store'
 import { authApi } from '@/api'
+import type { LoginResponse, UserDto } from '@/types'
 
 function makeAxiosError<T>(data: T, status = 400): AxiosError<T> {
   const headers = new AxiosHeaders()
@@ -15,6 +16,19 @@ function makeAxiosError<T>(data: T, status = 400): AxiosError<T> {
   }
   const error = new AxiosError<T>('request failed', String(status), undefined, undefined, response)
   return error
+}
+
+// 所有 mock 共用的 AxiosResponse 最小 shape；用 `satisfies` 讓 TS 在欄位不足時
+// 直接擋下（原本全部 `as any`，改動 LoginResponse / UserDto 型別時 mock 不會被抓）。
+function makeAxiosResponse<T>(data: T, status = 200): AxiosResponse<T> {
+  const headers = new AxiosHeaders()
+  return {
+    data,
+    status,
+    statusText: '',
+    headers,
+    config: { headers } as AxiosResponse<T>['config'],
+  } satisfies AxiosResponse<T>
 }
 
 vi.mock('@/api', () => ({
@@ -41,21 +55,17 @@ describe('useAuthStore', () => {
   })
 
   it('登入成功後更新 token 與使用者', async () => {
-    const mockUser = {
+    const mockUser: UserDto = {
       id: '1',
       email: 'test@example.com',
       display_name: 'Test',
-      role: 'user' as const,
+      role: 'user',
       created_at: '2024-01-01',
     }
+    const loginPayload: LoginResponse = { access_token: 'token123', expires_in: 900 }
 
-    vi.mocked(authApi.login).mockResolvedValue({
-      data: { access_token: 'token123', expires_in: 900 },
-    } as any)
-
-    vi.mocked(authApi.getMe).mockResolvedValue({
-      data: mockUser,
-    } as any)
+    vi.mocked(authApi.login).mockResolvedValue(makeAxiosResponse(loginPayload))
+    vi.mocked(authApi.getMe).mockResolvedValue(makeAxiosResponse(mockUser))
 
     const store = useAuthStore()
     const result = await store.login({ email: 'test@example.com', password: 'password' })
@@ -76,7 +86,7 @@ describe('useAuthStore', () => {
   })
 
   it('登出後清除狀態', async () => {
-    vi.mocked(authApi.logout).mockResolvedValue({ data: undefined } as any)
+    vi.mocked(authApi.logout).mockResolvedValue(makeAxiosResponse<void>(undefined))
 
     const store = useAuthStore()
     store.setAccessToken('sometoken')
@@ -113,7 +123,14 @@ describe('useAuthStore', () => {
   })
 
   it('註冊成功', async () => {
-    vi.mocked(authApi.register).mockResolvedValue({ data: { id: '1' } } as any)
+    const created: UserDto = {
+      id: '1',
+      email: 'new@example.com',
+      display_name: 'New',
+      role: 'user',
+      created_at: '2024-01-01',
+    }
+    vi.mocked(authApi.register).mockResolvedValue(makeAxiosResponse(created))
 
     const store = useAuthStore()
     const result = await store.register({
@@ -142,18 +159,17 @@ describe('useAuthStore', () => {
   })
 
   it('tryRefreshToken 成功時恢復認證狀態', async () => {
-    const mockUser = {
+    const mockUser: UserDto = {
       id: '1',
       email: 'test@example.com',
       display_name: 'Test',
-      role: 'user' as const,
+      role: 'user',
       created_at: '2024-01-01',
     }
+    const refreshPayload: LoginResponse = { access_token: 'new-token', expires_in: 900 }
 
-    vi.mocked(authApi.refresh).mockResolvedValue({
-      data: { access_token: 'new-token', expires_in: 900 },
-    } as any)
-    vi.mocked(authApi.getMe).mockResolvedValue({ data: mockUser } as any)
+    vi.mocked(authApi.refresh).mockResolvedValue(makeAxiosResponse(refreshPayload))
+    vi.mocked(authApi.getMe).mockResolvedValue(makeAxiosResponse(mockUser))
 
     const store = useAuthStore()
     const ok = await store.tryRefreshToken()
@@ -175,7 +191,9 @@ describe('useAuthStore', () => {
   })
 
   it('fetchCurrentUser 在 data 為空時不污染狀態', async () => {
-    vi.mocked(authApi.getMe).mockResolvedValue({ data: null } as any)
+    vi.mocked(authApi.getMe).mockResolvedValue(
+      makeAxiosResponse(null as unknown as UserDto),
+    )
 
     const store = useAuthStore()
     await store.fetchCurrentUser()
