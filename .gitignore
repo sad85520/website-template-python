@@ -23,9 +23,13 @@ dist/
 build/
 .eggs/
 *.whl
-.mypy_cache/
-.ruff_cache/
-.pytest_cache/
+# `.mypy_cache/` 無前綴 `**/` 在 git 預設 pattern 下只匹配 repo 根目錄的條目；
+# mypy 會在每個被檢查的 package 目錄下各生一份快取（例如 src/backend/.mypy_cache/），
+# 若只寫 `.mypy_cache/` 會讓子目錄的快取仍被 `git status` 追蹤到。
+# `**/` 明確覆蓋任意深度子目錄。同理套用到 ruff / pytest cache。
+**/.mypy_cache/
+**/.ruff_cache/
+**/.pytest_cache/
 .coverage
 htmlcov/
 .tox/

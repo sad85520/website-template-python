@@ -61,7 +61,10 @@ jobs:
     # Repository Settings → Secrets 以 `secrets.XXX` 引用，而非在此明文填入。
     services:
       postgres:
-        image: postgres:18-alpine
+        # 與 docker-compose.yml 及 k8s manifests 同步固定 16-alpine；
+        # 三處共用同一版號避免 CI 綠燈但 prod 行為不同（PG 版本間 partial index、
+        # planner 估算、sequence 表現都有差異）。
+        image: postgres:16-alpine
         env:
           POSTGRES_DB: test_db
           POSTGRES_USER: postgres

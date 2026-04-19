@@ -28,7 +28,11 @@
 # 1. 複製環境變數範本
 cp .env.example .env
 
-# 2. 編輯 .env 填入設定（至少修改 SECRET_KEY、DB_PASSWORD、JWT_SIGNING_KEY）
+# 2. 編輯 .env 填入設定，**每位開發者個人產生**、禁止沿用文件 / Slack 共用值
+#    （共用字串 == 已知 key，一旦外流等同整團隊憑證一起被取代）。
+#    DB_PASSWORD：openssl rand -hex 24
+#    SECRET_KEY： python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+#    JWT_SIGNING_KEY：python -c "import secrets; print(secrets.token_urlsafe(48))"
 
 # 3. 啟動所有服務
 make dev-build

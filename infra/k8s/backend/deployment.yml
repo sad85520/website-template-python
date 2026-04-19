@@ -18,6 +18,47 @@ spec:
       securityContext:
         seccompProfile:
           type: RuntimeDefault
+        # fsGroup 讓 kubelet 在掛載任何 writable volume 時自動 chown 給 GID 1000。
+        # 現在雖然只有 emptyDir /tmp（gunicorn / Django temp），未來若加上 PVC
+        # （log、upload）就不需要再修 manifest；先設立不會有副作用。
+        fsGroup: 1000
+      # Rolling deploy 時，避免新 pod gunicorn 啟動後才碰到 pending migration 造成
+      # 部分 request 500（migration 拖長時間同時還在 serve 流量，尤其新欄位查詢）。
+      # initContainer 確保 schema 就緒後再啟主容器；但須保證 migration 是 idempotent，
+      # 且多 replica 同時啟動時 Django 會以 Postgres advisory lock 串行化，不會衝突。
+      initContainers:
+        - name: migrate
+          image: ghcr.io/sad85520/website-template-python/backend:sha-9bdb88a
+          command: ["python", "manage.py", "migrate", "--noinput"]
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: DB_PASSWORD
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: SECRET_KEY
+            - name: JWT_SIGNING_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: app-secrets
+                  key: JWT_SIGNING_KEY
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
       containers:
         - name: backend
           image: ghcr.io/sad85520/website-template-python/backend:sha-9bdb88a

@@ -1,0 +1,66 @@
+# Redis 為 production 的共享快取依賴；DRF throttling、Django cache、
+# 未來的 celery broker 皆以此 cache 後端儲存狀態，讓 HPA 下多 pod 共享計數。
+# 生產環境建議改用 managed service（ElastiCache / Memorystore / Azure Cache for Redis），
+# 本 deployment 僅供 staging 與本地 k8s 模擬用。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: web-template
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: redis
+          image: redis:7-alpine
+          # Redis image 以 uid 999 (redis user) 執行；non-root + 全 drop 符合最小權限。
+          # --appendonly no：開發環境僅作 throttle 計數與 cache，不需要持久化，
+          # 壓低 I/O 也避免需要 PVC。生產請評估 AOF/RDB 需求或改 managed service。
+          args: ["--appendonly", "no", "--save", ""]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+          ports:
+            - containerPort: 6379
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+            - name: data
+              mountPath: /data
+          livenessProbe:
+            tcpSocket:
+              port: 6379
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          readinessProbe:
+            exec:
+              command: ["redis-cli", "ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: tmp
+          emptyDir: {}
+        - name: data
+          emptyDir: {}

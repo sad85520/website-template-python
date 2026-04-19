@@ -15,9 +15,31 @@ spec:
       labels:
         app: postgres
     spec:
+      # Pod-level seccomp：明示 RuntimeDefault，避免叢集關閉 SeccompDefault 時 fallback
+      # 為 Unconfined。
+      securityContext:
+        # postgres container 需要寫入 /var/lib/postgresql/data，fsGroup 統一讓 PVC 掛載
+        # 後目錄 gid 為 999，postgres uid 999 才能寫入。
+        fsGroup: 999
+        seccompProfile:
+          type: RuntimeDefault
       containers:
         - name: postgres
           image: postgres:16-alpine
+          # 開發用 postgres pod 的最小硬化：以 non-root 執行並卸除所有 cap。
+          # 正式生產請改用 managed service（RDS / Cloud SQL / Azure DB for PostgreSQL），
+          # 本 deployment 僅供 staging 與本地 k8s 模擬用。
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 999
+            runAsGroup: 999
+            allowPrivilegeEscalation: false
+            # readOnlyRootFilesystem 讓攻擊者即使取得 container shell 也無法寫入 /，
+            # postgres 真正需要寫的路徑（PGDATA、socket、tmp）透過 volumeMounts
+            # 另行掛成可寫 volume；其他 filesystem 維持唯讀。
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
           ports:
             - containerPort: 5432
           env:
@@ -46,7 +68,17 @@ spec:
           volumeMounts:
             - name: postgres-data
               mountPath: /var/lib/postgresql/data
+            # readOnlyRootFilesystem: true 之後，以下 postgres 必須寫入的路徑
+            # 必須改掛 emptyDir；重啟 pod 會丟失內容（socket/pid/tmp 本就是 volatile，可接受）。
+            - name: postgres-run
+              mountPath: /var/run/postgresql
+            - name: postgres-tmp
+              mountPath: /tmp
       volumes:
         - name: postgres-data
           persistentVolumeClaim:
             claimName: postgres-pvc
+        - name: postgres-run
+          emptyDir: {}
+        - name: postgres-tmp
+          emptyDir: {}
