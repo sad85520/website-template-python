@@ -19,7 +19,7 @@ spec:
           type: RuntimeDefault
       containers:
         - name: frontend
-          image: ghcr.io/sad85520/website-template-python/frontend:sha-9bdb88a
+          image: ghcr.io/sad85520/website-template-python/frontend:sha-df3d18d
           ports:
             - containerPort: 8080
           securityContext:
