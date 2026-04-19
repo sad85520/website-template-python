@@ -223,8 +223,11 @@ SPECTACULAR_SETTINGS = {
 # Refresh Token Cookie
 # refresh token 存放於 HttpOnly cookie，而非 localStorage，
 # 可防止 XSS 腳本直接讀取 token；SameSite=Strict 則進一步阻擋 CSRF 跨站請求攜帶此 cookie。
-REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
+# 下方 cookie 名稱與 SameSite 值會被 bandit B105 依變數名包含 TOKEN 而誤判為
+# hardcoded password；以 inline `# nosec B105` 逐點抑制，保留 B105 對其他位置
+# 真正 hardcoded secret 的偵測能力（勿在 pyproject 裡全域關掉）。
+REFRESH_TOKEN_COOKIE_NAME = "refreshToken"  # nosec B105
 # 開發環境（DEBUG=True）不強制 Secure，讓 http://localhost 也能正常運作。
 REFRESH_TOKEN_COOKIE_SECURE = not DEBUG
 REFRESH_TOKEN_COOKIE_HTTPONLY = True
-REFRESH_TOKEN_COOKIE_SAMESITE = "Strict"
+REFRESH_TOKEN_COOKIE_SAMESITE = "Strict"  # nosec B105
