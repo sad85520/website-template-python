@@ -28,7 +28,7 @@ spec:
       # 且多 replica 同時啟動時 Django 會以 Postgres advisory lock 串行化，不會衝突。
       initContainers:
         - name: migrate
-          image: ghcr.io/sad85520/website-template-python/backend:sha-df3d18d
+          image: ghcr.io/sad85520/website-template-python/backend:sha-03f5563
           command: ["python", "manage.py", "migrate", "--noinput"]
           envFrom:
             - configMapRef:
@@ -61,7 +61,7 @@ spec:
               mountPath: /tmp
       containers:
         - name: backend
-          image: ghcr.io/sad85520/website-template-python/backend:sha-df3d18d
+          image: ghcr.io/sad85520/website-template-python/backend:sha-03f5563
           ports:
             - containerPort: 8000
           securityContext:
