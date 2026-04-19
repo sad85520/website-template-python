@@ -32,21 +32,30 @@ RUN useradd --system --no-create-home --shell /usr/sbin/nologin --uid 1000 appus
 
 COPY --from=builder --chown=appuser:appuser /app /app
 
-# These vars are required by the settings loader at import time.
-# Dummy values are used only during collectstatic and are cleared afterwards.
+# These vars are required by the settings loader at import time (production.py
+# does fail-fast on each one). Dummy values are used only during collectstatic
+# and are cleared afterwards; the runtime container will be started with the
+# real values from k8s Secret / ConfigMap.
+# REDIS_URL: production.py raises ImproperlyConfigured when unset (DRF throttling
+# would otherwise silently degrade to per-pod LocMemCache under HPA scale-out);
+# the dummy URL below satisfies the import-time check without opening any socket
+# — collectstatic does not touch the cache backend.
 ARG SECRET_KEY=build-time-dummy-secret-key-not-used-in-production
 ARG DB_PASSWORD=build-time-dummy
 ARG JWT_SIGNING_KEY=build-time-dummy-jwt-signing-key-not-used-in-production
 ARG ALLOWED_HOSTS=build-time-dummy
+ARG REDIS_URL=redis://build-time-dummy:6379/0
 ENV SECRET_KEY=${SECRET_KEY} \
     DB_PASSWORD=${DB_PASSWORD} \
     JWT_SIGNING_KEY=${JWT_SIGNING_KEY} \
-    ALLOWED_HOSTS=${ALLOWED_HOSTS}
+    ALLOWED_HOSTS=${ALLOWED_HOSTS} \
+    REDIS_URL=${REDIS_URL}
 RUN python manage.py collectstatic --noinput
 ENV SECRET_KEY= \
     DB_PASSWORD= \
     JWT_SIGNING_KEY= \
-    ALLOWED_HOSTS=
+    ALLOWED_HOSTS= \
+    REDIS_URL=
 
 USER appuser
 
