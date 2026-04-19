@@ -2,33 +2,38 @@
 name = "website-template-python"
 version = "0.1.0"
 requires-python = ">=3.12"
+# 版本區間策略：鎖到 minor（`>=X.Y,<X.Y+1`），與 uv.lock 的安裝結果對齊。
+# 只開放 patch（bugfix）升級；minor 升級需要明確調整 range 才能生效，避免
+# `uv sync` 於 CI 自動升上 breaking 的 minor 版並讓測試在 PR 階段才爆掉。
 dependencies = [
-    "Django>=6.0,<7.0",
-    "djangorestframework>=3.15,<4.0",
-    "djangorestframework-simplejwt>=5.3,<6.0",
-    "drf-spectacular>=0.27,<1.0",
-    "psycopg[binary]>=3.1,<4.0",
-    "django-cors-headers>=4.3,<5.0",
-    "django-csp>=3.8,<4.0",
-    "python-decouple>=3.8,<4.0",
-    "structlog>=24.0,<25.0",
-    "django-health-check>=3.18,<4.0",
-    "gunicorn>=22.0,<23.0",
+    "Django>=6.0,<6.1",
+    "djangorestframework>=3.17,<3.18",
+    "djangorestframework-simplejwt>=5.5,<5.6",
+    "drf-spectacular>=0.29,<0.30",
+    "psycopg[binary]>=3.3,<3.4",
+    "django-cors-headers>=4.9,<4.10",
+    "django-csp>=3.8,<3.9",
+    "python-decouple>=3.8,<3.9",
+    "structlog>=24.4,<24.5",
+    "django-health-check>=3.24,<3.25",
+    "gunicorn>=22.0,<22.1",
 ]
 
 [dependency-groups]
 dev = [
-    "pytest>=8.3,<9.0",
-    "pytest-django>=4.9,<5.0",
-    "pytest-cov>=6.0,<7.0",
-    "factory-boy>=3.3,<4.0",
-    "ruff>=0.8,<1.0",
-    "mypy>=1.13,<1.20",
-    "django-stubs[compatible-mypy]>=6.0,<7.0",
-    "djangorestframework-stubs>=3.15,<4.0",
+    "pytest>=8.4,<8.5",
+    "pytest-django>=4.12,<4.13",
+    "pytest-cov>=6.3,<6.4",
+    "factory-boy>=3.3,<3.4",
+    # ruff 0.x 的 minor 號才是 breaking-change 邊界（0.14 → 0.15 會改 lint rule 行為），
+    # patch-only 範圍對齊 uv.lock 的 0.15.x。
+    "ruff>=0.15,<0.16",
+    "mypy>=1.19,<1.20",
+    "django-stubs[compatible-mypy]>=6.0,<6.1",
+    "djangorestframework-stubs>=3.16,<3.17",
     # bandit：靜態安全掃描（hardcoded secret、unsafe yaml.load、shell=True 等）。
     # 跟 ruff 的 S 系列規則有重疊但不完全等價，bandit 的 Django 專屬規則較完整。
-    "bandit>=1.7,<2.0",
+    "bandit>=1.9,<2.0",
 ]
 
 [tool.ruff]

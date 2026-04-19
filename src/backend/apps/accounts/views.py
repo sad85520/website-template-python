@@ -4,6 +4,7 @@
 錯誤路徑由 ``apps.core.exceptions.custom_exception_handler`` 統一轉為 RFC 7807 Problem Details。
 理由見 ``docs/adr/ADR-001-drf-native-response-format.md``。
 """
+
 from django.conf import settings
 from django.http import Http404
 from drf_spectacular.utils import extend_schema

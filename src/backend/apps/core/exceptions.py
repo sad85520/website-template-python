@@ -7,6 +7,7 @@
 成功回應則直接由 view 透過 ``return Response(serializer.data, status=200)`` 產出 DRF 原生格式，
 本模組僅負責錯誤路徑。
 """
+
 from __future__ import annotations
 
 import logging

@@ -8,6 +8,7 @@
 使用方式：settings/*.py 呼叫 `configure_structlog(json_output=...)` 並採用
 `build_logging_dict(json_output=...)` 作為 `LOGGING` 值。
 """
+
 from typing import Any
 
 import structlog
@@ -41,15 +42,20 @@ def configure_structlog(*, json_output: bool) -> None:
         if json_output
         else structlog.dev.ConsoleRenderer(colors=True)
     )
-    structlog.configure(
-        processors=[
-            *_shared_processors(),
-            structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
-        ],
-        logger_factory=structlog.stdlib.LoggerFactory(),
-        wrapper_class=structlog.stdlib.BoundLogger,
-        cache_logger_on_first_use=True,
-    )
+    # `cache_logger_on_first_use=True` 把第一次 get_logger 回傳的 BoundLogger
+    # 鎖進 module-level cache，之後再呼叫 `structlog.configure()` 不會更新到
+    # 既有 logger 實例（processor chain 靜默被忽略、下游對 reconfigure 的
+    # 預期被打破）。先判斷是否已配置，僅在未配置時寫入 + 更新 renderer 快取。
+    if not structlog.is_configured():
+        structlog.configure(
+            processors=[
+                *_shared_processors(),
+                structlog.stdlib.ProcessorFormatter.wrap_for_formatter,
+            ],
+            logger_factory=structlog.stdlib.LoggerFactory(),
+            wrapper_class=structlog.stdlib.BoundLogger,
+            cache_logger_on_first_use=True,
+        )
     # 把 final renderer 暫存於 module，讓 build_logging_dict 能拿到相同實例，
     # 避免 dev/prod 產生兩個獨立的 renderer 造成行為差異。
     _RENDERER_CACHE["renderer"] = final_renderer

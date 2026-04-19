@@ -3,6 +3,7 @@
 以 ``@pytest.mark.django_db`` 搭配真實 ORM 驗證 service 行為，
 避免 mock Repository 帶來的「測試通過但行為漂移」風險（見 ADR-002）。
 """
+
 from datetime import timedelta
 
 import pytest

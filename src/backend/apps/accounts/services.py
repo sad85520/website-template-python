@@ -5,12 +5,13 @@
 - Django ORM 已提供 QuerySet 抽象，Repository 只會形成冗餘包裝
 - Service 層測試改以 ``@pytest.mark.django_db`` 搭配真實 ORM，避免 mock 與實際行為漂移
 """
+
 import contextlib
 from datetime import timedelta
 
 from django.conf import settings
 from django.contrib.auth import authenticate
-from django.db.models import F
+from django.db import transaction
 from django.utils import timezone
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -55,7 +56,11 @@ def login_user(email: str, password: str) -> tuple[User, str, str]:
     # 鎖定檢查必須在 authenticate() 之前進行：若先呼叫 authenticate()，
     # Django 內建機制會在密碼正確時放行，導致已鎖定帳號仍能登入。
     candidate = User.objects.get_by_email_for_auth(email)
-    if candidate is not None and candidate.lockout_until and candidate.lockout_until > timezone.now():
+    if (
+        candidate is not None
+        and candidate.lockout_until
+        and candidate.lockout_until > timezone.now()
+    ):
         raise AuthenticationFailed("Account is temporarily locked. Try again later.")
 
     user = authenticate(username=email, password=password)
@@ -63,16 +68,22 @@ def login_user(email: str, password: str) -> tuple[User, str, str]:
         # 無論是帳號不存在還是密碼錯誤，統一回傳相同訊息，
         # 防止攻擊者透過錯誤訊息的差異來枚舉有效帳號。
         if candidate is not None:
-            # 以 F expression 進行原子遞增，避免多個並發登入失敗請求之間的
-            # read-modify-write race condition（先讀舊值、本機 +1 再寫回會覆蓋彼此遞增）。
-            User.objects.filter(pk=candidate.pk).update(
-                failed_login_attempts=F("failed_login_attempts") + 1
-            )
-            candidate.refresh_from_db(fields=["failed_login_attempts"])
-            if candidate.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
-                User.objects.filter(pk=candidate.pk).update(
-                    lockout_until=timezone.now() + LOCKOUT_DURATION
+            # 遞增與 lockout 設定放進同一個 transaction + SELECT FOR UPDATE，
+            # 避免兩個並發失敗請求各自讀到 4、各自 +1 變 5 卻「兩邊」都觸發 lockout
+            # 並彼此覆蓋 lockout_until（舊作法：F() 原子遞增 + refresh_from_db + 再 update
+            # 是三個獨立 statement，第一步原子但跨 statement 仍有 race）。
+            with transaction.atomic():
+                locked = (
+                    User.objects.select_for_update()
+                    .filter(pk=candidate.pk)
+                    .only("id", "failed_login_attempts", "lockout_until")
+                    .first()
                 )
+                if locked is not None:
+                    locked.failed_login_attempts += 1
+                    if locked.failed_login_attempts >= MAX_LOGIN_ATTEMPTS:
+                        locked.lockout_until = timezone.now() + LOCKOUT_DURATION
+                    locked.save(update_fields=["failed_login_attempts", "lockout_until"])
         raise AuthenticationFailed("Invalid email or password.")
     if not user.is_active:
         raise AuthenticationFailed("Account is disabled.")
@@ -108,10 +119,12 @@ def refresh_access_token(refresh_token_str: str) -> tuple[str, str]:
     # blacklist() 使此 token 失效，但不清除 Python 物件本身的 payload；
     # refresh["user_id"] 是直接讀取已解碼的 JWT claims（對應 SIMPLE_JWT["USER_ID_CLAIM"]），
     # 此時仍可安全存取，無需重新解碼。
-    # 重新查詢確保帳號在 token 發出後未被停用或刪除。
+    # 重新查詢確保帳號在 token 發出後未被停用或刪除；同時檢查 is_active，
+    # 否則停用帳號仍可憑既有 refresh token 換新 access token 直到 refresh 過期
+    # （最多一週），相當於「登出」操作被繞過。
     user = User.objects.filter(pk=refresh["user_id"]).first()
-    if user is None:
-        raise ValueError("User not found for refresh token")
+    if user is None or not user.is_active:
+        raise ValueError("User not found or inactive for refresh token")
     new_refresh = RefreshToken.for_user(user)
     return new_access_token, str(new_refresh)
 

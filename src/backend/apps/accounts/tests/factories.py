@@ -1,4 +1,5 @@
 """測試用 factory，使用 factory_boy 建立 User 實例。"""
+
 import factory
 from factory.django import DjangoModelFactory
 

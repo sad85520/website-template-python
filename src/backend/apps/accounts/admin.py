@@ -1,4 +1,5 @@
 """Django Admin 使用者管理設定。"""
+
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 
@@ -18,13 +19,19 @@ class UserAdmin(BaseUserAdmin):  # type: ignore[type-arg]
     fieldsets = (
         (None, {"fields": ("email", "password")}),
         ("個人資訊", {"fields": ("display_name", "role")}),
-        ("權限", {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")}),
+        (
+            "權限",
+            {"fields": ("is_active", "is_staff", "is_superuser", "groups", "user_permissions")},
+        ),
         ("日期", {"fields": ("last_login",)}),
     )
     # add_fieldsets 定義「新增使用者」表單的欄位，password1/password2 是 Django Admin 內建的密碼確認機制。
     add_fieldsets = (
-        (None, {
-            "classes": ("wide",),
-            "fields": ("email", "display_name", "password1", "password2", "role"),
-        }),
+        (
+            None,
+            {
+                "classes": ("wide",),
+                "fields": ("email", "display_name", "password1", "password2", "role"),
+            },
+        ),
     )

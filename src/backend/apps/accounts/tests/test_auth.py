@@ -2,6 +2,7 @@
 
 回應格式：成功路徑為 DRF 原生格式，錯誤路徑為 RFC 7807 Problem Details（title/detail/status）。
 """
+
 from datetime import timedelta
 
 import pytest

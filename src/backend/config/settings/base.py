@@ -1,6 +1,7 @@
 """
 Base settings shared across all environments.
 """
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -167,6 +168,15 @@ REST_FRAMEWORK = {
     "EXCEPTION_HANDLER": "apps.core.exceptions.custom_exception_handler",
     "DEFAULT_PAGINATION_CLASS": "apps.core.pagination.StandardPagination",
     "PAGE_SIZE": 20,
+    # 全域 throttle 預設：authenticated endpoints 必須掛上 UserRateThrottle 才能套
+    # `DEFAULT_THROTTLE_RATES.user`，否則只會套到「明確指定 throttle_classes」的 view，
+    # 造成 /me、/users 等已驗證端點無限流。
+    # 此處一次性在 base 設定，dev 以 LocMemCache 也可正常套用；production.py 的 CACHES
+    # override 到 Redis 後才能在多 pod / 多 worker 下維持正確計數。
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
     # Throttle classes 在 view 中以 AnonRateThrottle / UserRateThrottle 宣告，
     # 但實際速率必須在此處以 scope → rate 的對應表設定，否則 DRF 會完全跳過限流。
     # 格式：'<n>/<period>'，period 支援 'second' | 'minute' | 'hour' | 'day'。

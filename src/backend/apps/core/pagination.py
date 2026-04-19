@@ -16,6 +16,7 @@
 - 符合 Django/DRF 社群慣例，新進開發者無需學習自訂格式
 - 避免手寫 ``get_paginated_response_schema`` 的維護成本
 """
+
 from rest_framework.pagination import PageNumberPagination
 
 

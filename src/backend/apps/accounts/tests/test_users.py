@@ -3,6 +3,7 @@
 成功路徑為 DRF 原生格式；分頁採 PageNumberPagination 預設格式：
 ``{count, next, previous, results}``。
 """
+
 import pytest
 from django.urls import reverse
 from rest_framework import status

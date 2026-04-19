@@ -1,4 +1,5 @@
 """Serializers for accounts app."""
+
 from django.contrib.auth.password_validation import validate_password
 from rest_framework import serializers
 
@@ -40,6 +41,27 @@ class RegisterSerializer(serializers.Serializer[User]):
         if User.objects.filter(email=value).exists():
             raise serializers.ValidationError("Email is already registered.")
         return value
+
+    def validate_display_name(self, value: str) -> str:
+        """驗證顯示名稱非純空白。
+
+        Args:
+            value: 輸入的顯示名稱。
+
+        Returns:
+            去除前後空白後的顯示名稱。
+
+        Raises:
+            ValidationError: 去除空白後長度不足 2 字元時拋出。
+        """
+        # CharField 預設只把純空白 "" 視為空，"  " 會通過 min_length=2 檢查；
+        # strip 後再次檢查長度確保呈現給其他使用者的顯示名稱不是隱形空白。
+        stripped = value.strip()
+        if len(stripped) < 2:
+            raise serializers.ValidationError(
+                "Display name must contain at least 2 non-whitespace characters."
+            )
+        return stripped
 
     def validate_password(self, value: str) -> str:
         """透過 Django 內建驗證器檢查密碼強度。

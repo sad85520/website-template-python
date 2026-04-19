@@ -1,4 +1,5 @@
 """Custom User model with email-based authentication."""
+
 import uuid
 from typing import Any
 

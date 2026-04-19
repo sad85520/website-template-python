@@ -14,7 +14,18 @@ from drf_spectacular.views import SpectacularAPIView
     FONT_SRC=["https://cdn.jsdelivr.net"],
 )
 def scalar_view(request: HttpRequest) -> HttpResponse:
-    """Scalar API 文件 UI（僅開發環境）。"""
+    """Scalar API 文件 UI（僅開發環境）。
+
+    安全考量：
+    - 腳本來源固定到 ``@scalar/api-reference@1``（major 版本鎖），避免 jsdelivr
+      預設的滾動 latest tag 在 supply chain 事件發生時把惡意 bundle 推到所有部署。
+    - 若要更嚴格（擋住 minor/patch 被竄改），請將 URL 改為具體版本例如
+      ``@scalar/api-reference@1.25.100/dist/browser/standalone.js`` 並加上
+      ``integrity="sha384-..." crossorigin="anonymous"``；SRI hash 可用
+      ``curl -sL <url> | openssl dgst -sha384 -binary | openssl base64 -A`` 計算。
+    - 即便鎖版本，此 view 也僅在 ``settings.DEBUG`` 下掛載（見 urlpatterns 條件分支），
+      production 不會暴露此端點。
+    """
     html = """<!doctype html>
 <html>
   <head>
@@ -24,7 +35,7 @@ def scalar_view(request: HttpRequest) -> HttpResponse:
   </head>
   <body>
     <script id="api-reference" data-url="/api/schema/"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference@1"></script>
   </body>
 </html>"""
     return HttpResponse(html)

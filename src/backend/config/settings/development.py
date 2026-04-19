@@ -1,4 +1,5 @@
 """Development settings."""
+
 from config.logging import build_logging_dict, configure_structlog
 
 from .base import *  # noqa: F403, F401
