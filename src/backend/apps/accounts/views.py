@@ -5,13 +5,14 @@
 理由見 ``docs/adr/ADR-001-drf-native-response-format.md``。
 """
 
+from typing import TYPE_CHECKING
+
 from django.conf import settings
 from django.http import Http404
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated
-from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
@@ -28,6 +29,9 @@ from .serializers import (
     TokenRefreshResponseSerializer,
     UserSerializer,
 )
+
+if TYPE_CHECKING:
+    from rest_framework.request import Request
 
 REFRESH_COOKIE = getattr(settings, "REFRESH_TOKEN_COOKIE_NAME", "refreshToken")
 

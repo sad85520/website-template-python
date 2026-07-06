@@ -5,12 +5,16 @@
 """
 
 import importlib
-from collections.abc import Iterator
+from typing import TYPE_CHECKING
 
 import pytest
 from django.urls import clear_url_caches
-from pytest_django.fixtures import SettingsWrapper
 from rest_framework.test import APIClient
+
+if TYPE_CHECKING:
+    from collections.abc import Iterator
+
+    from pytest_django.fixtures import SettingsWrapper
 
 
 @pytest.fixture

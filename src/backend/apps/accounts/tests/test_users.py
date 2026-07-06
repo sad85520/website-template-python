@@ -4,14 +4,18 @@
 ``{count, next, previous, results}``。
 """
 
+from typing import TYPE_CHECKING
+
 import pytest
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIClient
 
 from apps.accounts.models import User
 
 from .factories import UserFactory
+
+if TYPE_CHECKING:
+    from rest_framework.test import APIClient
 
 # `client` fixture 來自 src/backend/conftest.py（project-wide）。
 

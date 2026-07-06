@@ -16,7 +16,7 @@ class UserQuerySet(models.QuerySet["User"]):
     避免重複包裝 ``.filter().first()`` 等瑣碎呼叫，同時保留單一職責與可測試性。
     """
 
-    def get_by_email(self, email: str) -> "User | None":
+    def get_by_email(self, email: str) -> User | None:
         """以 email 查詢使用中的使用者；停用或鎖定帳號不會回傳。
 
         一般 API 路徑（資料查詢、管理介面）應走此方法 — 對齊 Django authenticate()
@@ -25,7 +25,7 @@ class UserQuerySet(models.QuerySet["User"]):
         """
         return self.filter(email=email, is_active=True).first()
 
-    def get_by_email_for_auth(self, email: str) -> "User | None":
+    def get_by_email_for_auth(self, email: str) -> User | None:
         """authenticate() 之前取得完整帳號狀態（含停用帳號），用於檢查 lockout_until。
 
         與 ``get_by_email`` 刻意分開：authenticate() 僅處理 is_active 帳號，
@@ -33,7 +33,7 @@ class UserQuerySet(models.QuerySet["User"]):
         """
         return self.filter(email=email).first()
 
-    def search(self, query: str) -> "UserQuerySet":
+    def search(self, query: str) -> UserQuerySet:
         """依關鍵字比對 email 與 display_name；空字串回傳全部。"""
         if not query:
             return self.all()
@@ -54,7 +54,7 @@ class UserManager(BaseUserManager["User"].from_queryset(UserQuerySet)):  # type:
 
     def create_user(
         self, email: str, password: str, display_name: str = "", **extra_fields: Any
-    ) -> "User":
+    ) -> User:
         """建立並儲存一般使用者。
 
         Args:
@@ -79,7 +79,7 @@ class UserManager(BaseUserManager["User"].from_queryset(UserQuerySet)):  # type:
         user.save(using=self._db)
         return user
 
-    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> "User":
+    def create_superuser(self, email: str, password: str, **extra_fields: Any) -> User:
         """建立並儲存超級使用者，自動設定 is_staff、is_superuser 與 Admin 角色。
 
         Args:
