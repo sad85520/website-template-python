@@ -124,12 +124,12 @@ Django ORM 的設計哲學是「Model 即是業務物件 + 資料存取點」。
 
 ## 後續行動
 
-- [ ] 刪除 `apps/accounts/repositories.py`
-- [ ] 將 `UserRepository` 的查詢邏輯搬到 `UserQuerySet` / `UserManager`
-- [ ] 重構 `apps/accounts/services.py` 移除 Repository 依賴
-- [ ] 重寫 Service 層測試改為 `@pytest.mark.django_db` 風格
-- [ ] 更新 `docs/architecture.md` 的分層圖
-- [ ] README.md 移除「Repository」相關描述
+- [x] 刪除 `apps/accounts/repositories.py`
+- [x] 將 `UserRepository` 的查詢邏輯搬到 `UserQuerySet` / `UserManager`
+- [x] 重構 `apps/accounts/services.py` 移除 Repository 依賴
+- [x] 重寫 Service 層測試改為 `@pytest.mark.django_db` 風格
+- [x] 更新 `docs/architecture.md` 的分層圖
+- [x] README.md 移除「Repository」相關描述
 
 ## 參考資料
 

@@ -55,9 +55,10 @@ hook 失敗後：依錯誤訊息修、`git add` 重跑；不建議用 `--no-veri
 | 服務 | URL |
 |------|-----|
 | 應用程式 | http://localhost |
-| API Swagger | http://localhost/api/schema/swagger-ui/ |
+| API 文件（Scalar） | http://localhost/api/scalar/ |
 | Django Admin | http://localhost/admin/ |
-| 健康檢查 | http://localhost/api/health/ |
+| 健康檢查（liveness） | http://localhost/api/health/ |
+| 健康檢查（readiness） | http://localhost/api/health/ready/ |
 
 ## 常用指令
 
@@ -82,6 +83,17 @@ make logs          # 查看即時 logs
 | `DB_PASSWORD` | 是 | PostgreSQL 密碼 |
 | `JWT_SIGNING_KEY` | 是 | JWT 簽署金鑰，至少 32 字元 |
 | `ALLOWED_HOSTS` | 開發預設 `localhost,127.0.0.1` | 生產未設即 fail-fast（避免 host-header 攻擊） |
+
+### 兩份 `.env` 的差異
+
+專案裡有兩份環境變數檔，用途不同：
+
+| 檔案 | 用途 |
+|------|------|
+| 根目錄 `.env`（從 `.env.example` 複製） | Docker Compose 啟動服務時讀取，供 `make dev` / `make dev-build` 等指令使用 |
+| `src/backend/.env` | 不透過 Docker、直接在 `src/backend` 目錄執行 `uv run pytest` / `uv run manage.py ...` 時，`python-decouple` 會讀取此檔。內容是 CI 用的假值（`ci-secret-key-not-used-in-production` 等），已被 `.gitignore` 排除，本身沒有外洩風險 |
+
+兩者都已加入 `.gitignore`，不會被 commit。若只透過 Docker Compose 開發，可以不理會 `src/backend/.env`；若要在本機直接跑後端測試或指令，才需要這一份。
 
 > 生產專用覆寫（`REDIS_URL` / `HSTS_SECONDS` / `HSTS_PRELOAD` / `LANGUAGE_CODE` / `TIME_ZONE` / `GUNICORN_WORKERS` / `GUNICORN_TIMEOUT`）見 [deployment.md](deployment.md#生產環境變數)。
 

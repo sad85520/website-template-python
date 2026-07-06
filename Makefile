@@ -39,7 +39,10 @@ migrate:
 # 新增 Migration
 # 用法: make migration APP=accounts NAME=add_user_table
 migration:
-	docker compose run --rm backend python manage.py makemigrations $(APP)
+ifndef NAME
+	$(error NAME 未設定，用法: make migration APP=accounts NAME=add_user_table)
+endif
+	docker compose run --rm backend python manage.py makemigrations $(APP) --name $(NAME)
 
 # 建立超級使用者
 superuser:

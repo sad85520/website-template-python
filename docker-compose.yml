@@ -31,6 +31,8 @@ services:
       DB_HOST: postgres
       DB_PORT: "5432"
       JWT_SIGNING_KEY: "${JWT_SIGNING_KEY}"
+      JWT_ACCESS_TOKEN_LIFETIME_MINUTES: "${JWT_ACCESS_TOKEN_LIFETIME_MINUTES:-15}"
+      JWT_REFRESH_TOKEN_LIFETIME_DAYS: "${JWT_REFRESH_TOKEN_LIFETIME_DAYS:-7}"
       DEBUG: "True"
       ALLOWED_HOSTS: "localhost,127.0.0.1,backend"
     depends_on:
@@ -38,6 +40,7 @@ services:
         condition: service_healthy
     volumes:
       - ./src/backend:/app
+      - backend-venv:/app/.venv
 
   frontend:
     build:
@@ -62,3 +65,4 @@ services:
 volumes:
   postgres-data:
   frontend-node-modules:
+  backend-venv:

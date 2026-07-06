@@ -17,6 +17,10 @@ dependencies = [
     "structlog>=24.4,<24.5",
     "django-health-check>=3.24,<3.25",
     "gunicorn>=22.0,<22.1",
+    # gunicorn 直接服務靜態檔（Django Admin CSS/JS），不需要另外的 volume /
+    # initContainer 讓 nginx 讀 staticfiles/：production.py 搭配
+    # CompressedManifestStaticFilesStorage 使用，見 config/settings/production.py。
+    "whitenoise>=6.11,<6.12",
 ]
 
 [dependency-groups]

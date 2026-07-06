@@ -1,4 +1,16 @@
 services:
+  # Redis is prod-only: development uses per-process LocMemCache (see
+  # config/settings/base.py), while config/settings/production.py fail-fasts
+  # when REDIS_URL is missing — DRF throttle counters need a shared cache.
+  # No volume: it stores only cache/throttle state, safe to lose on restart.
+  redis:
+    image: redis:8-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   backend:
     build:
       context: ./src/backend
@@ -10,6 +22,10 @@ services:
     environment:
       DJANGO_SETTINGS_MODULE: config.settings.production
       DEBUG: "False"
+      REDIS_URL: "redis://redis:6379/0"
+    depends_on:
+      redis:
+        condition: service_healthy
 
   frontend:
     build:

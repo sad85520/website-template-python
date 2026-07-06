@@ -43,9 +43,12 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt.token_blacklist",
     "corsheaders",
     "drf_spectacular",
+    # 只保留 "health_check" 本體（提供 HealthCheckView 的 HTML template）。
+    # 刻意不加 "health_check.db" / "health_check.cache"：這兩個子 app 只是把
+    # 已棄用的 legacy backend 註冊進全域 plugin_dir，供舊版 MainView + subset
+    # 機制使用；config/urls.py 改用 HealthCheckView(checks=[...]) 明確指定
+    # "health_check.Database" / "health_check.Cache"，不依賴 plugin_dir 全域註冊。
     "health_check",
-    "health_check.db",
-    "health_check.cache",
 ]
 
 LOCAL_APPS = [
@@ -57,8 +60,16 @@ INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
-    # CSPMiddleware 必須緊接在 SecurityMiddleware 之後、CorsMiddleware 之前，
-    # 才能確保 Content-Security-Policy header 在所有回應中都被設定。
+    # WhiteNoise 必須緊接在 SecurityMiddleware 之後：讓 gunicorn 自己撐開
+    # /static/ 請求（Django Admin 的 CSS/JS），不需要額外的共享 volume 讓
+    # nginx 讀取 staticfiles/。DEBUG=True 時若請求的檔案不在 STATIC_ROOT
+    # （尚未 collectstatic），WhiteNoise 會直接放行給下一層，不影響
+    # django.contrib.staticfiles 在開發模式下的自動 serve。
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # CSPMiddleware 必須排在 SecurityMiddleware 之後、CorsMiddleware 之前，
+    # 才能確保 Content-Security-Policy header 在所有回應中都被設定；
+    # WhiteNoise 插在兩者之間不影響此順序（WhiteNoise 只攔截靜態檔請求，
+    # 其餘請求原封不動往下傳，CSP header 仍會被正確加上）。
     "csp.middleware.CSPMiddleware",
     # CorsMiddleware 必須排在 SessionMiddleware 之前，
     # 才能在 OPTIONS preflight 請求上直接回傳 CORS headers，不觸發 session 開啟。

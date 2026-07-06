@@ -200,4 +200,20 @@ describe('useAuthStore', () => {
 
     expect(store.currentUser).toBeNull()
   })
+
+  it('fetchCurrentUser 失敗時清除 currentUser 且不拋出例外', async () => {
+    vi.mocked(authApi.getMe).mockRejectedValue(new Error('network down'))
+
+    const store = useAuthStore()
+    store.currentUser = {
+      id: '1',
+      email: 'stale@example.com',
+      display_name: 'Stale',
+      role: 'user',
+      created_at: '2024-01-01',
+    }
+
+    await expect(store.fetchCurrentUser()).resolves.toBeUndefined()
+    expect(store.currentUser).toBeNull()
+  })
 })

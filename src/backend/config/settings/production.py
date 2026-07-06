@@ -9,6 +9,21 @@ from .base import *  # noqa: F403, F401
 
 DEBUG = False
 
+# WhiteNoise 專用 storage backend：collectstatic 時額外產生檔名帶 content-hash
+# 的版本並壓縮（gzip/brotli），讓 WhiteNoiseMiddleware 可設定近乎永久的
+# Cache-Control（檔名變了瀏覽器才會重新下載，內容沒變則永久命中快取）。
+# 只在 production 覆寫、不放在 base.py：dev/test 從未執行 collectstatic，
+# 沒有 staticfiles manifest 檔，若全域套用會讓任何 {% static %} 渲染直接
+# 因「manifest 缺少該檔案」而炸掉。
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
+
 # ALLOWED_HOSTS 在 production 不提供 default：漏設即 fail-fast，避免
 # 上線後靜默接受任意 Host header 造成 host-header attack / cache poisoning。
 ALLOWED_HOSTS = config(

@@ -1,0 +1,38 @@
+version: 2
+updates:
+  # 後端：uv 相容 pip ecosystem，讀取 src/backend/pyproject.toml + uv.lock。
+  - package-ecosystem: "pip"
+    directory: "/src/backend"
+    schedule:
+      interval: "weekly"
+    groups:
+      backend-dependencies:
+        patterns:
+          - "*"
+
+  # 前端：pnpm 相容 npm ecosystem，讀取 src/frontend/package.json + pnpm-lock.yaml。
+  - package-ecosystem: "npm"
+    directory: "/src/frontend"
+    schedule:
+      interval: "weekly"
+    groups:
+      frontend-dependencies:
+        patterns:
+          - "*"
+
+  # Docker base image 與 uv 版本 pin（src/backend/Dockerfile*、src/frontend/Dockerfile*）。
+  - package-ecosystem: "docker"
+    directory: "/src/backend"
+    schedule:
+      interval: "weekly"
+
+  - package-ecosystem: "docker"
+    directory: "/src/frontend"
+    schedule:
+      interval: "weekly"
+
+  # GitHub Actions：所有 workflow pin 的 commit SHA 由此排期更新。
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
