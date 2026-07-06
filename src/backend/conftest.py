@@ -5,9 +5,11 @@
 """
 
 import importlib
+from collections.abc import Iterator
 
 import pytest
 from django.urls import clear_url_caches
+from pytest_django.fixtures import SettingsWrapper
 from rest_framework.test import APIClient
 
 
@@ -22,7 +24,7 @@ def client() -> APIClient:
 
 
 @pytest.fixture
-def debug_urlconf(settings):
+def debug_urlconf(settings: SettingsWrapper) -> Iterator[None]:
     """讓 DEBUG-only 路由（``/api/schema/``、``/api/scalar/``）在測試中可達。
 
     Django 的測試環境設定（``django.test.utils.setup_test_environment``）會強制
