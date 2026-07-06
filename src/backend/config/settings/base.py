@@ -5,6 +5,7 @@ Base settings shared across all environments.
 from datetime import timedelta
 from pathlib import Path
 
+from csp.constants import NONE, SELF
 from decouple import config
 
 # django-stubs 的 runtime patch：讓 ``QuerySet[Model]``、``Manager[Model]`` 等
@@ -82,16 +83,22 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-# Content Security Policy（django-csp）
+# Content Security Policy（django-csp 4.x）
 # 全域嚴格 CSP，純 API 不需要任何 script/style。
 # Scalar UI 路徑透過 urls.py 的 @csp_update decorator 個別放寬。
-CSP_DEFAULT_SRC = ("'none'",)
-CSP_SCRIPT_SRC = ("'none'",)
-CSP_STYLE_SRC = ("'none'",)
-CSP_IMG_SRC = ("'self'", "data:")
-CSP_FONT_SRC = ("'none'",)
-CSP_CONNECT_SRC = ("'self'",)
-CSP_FRAME_ANCESTORS = ("'none'",)
+# 4.x 起設定集中在 CONTENT_SECURITY_POLICY dict（取代 3.x 的 CSP_* 平面變數），
+# 來源常數用 csp.constants（SELF/NONE），避免手寫 "'self'" 引號錯誤導致指令失效。
+CONTENT_SECURITY_POLICY = {
+    "DIRECTIVES": {
+        "default-src": [NONE],
+        "script-src": [NONE],
+        "style-src": [NONE],
+        "img-src": [SELF, "data:"],
+        "font-src": [NONE],
+        "connect-src": [SELF],
+        "frame-ancestors": [NONE],
+    }
+}
 
 ROOT_URLCONF = "config.urls"
 

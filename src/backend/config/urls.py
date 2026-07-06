@@ -1,3 +1,4 @@
+from csp.constants import SELF, UNSAFE_INLINE
 from csp.decorators import csp_update
 from django.conf import settings
 from django.contrib import admin
@@ -8,11 +9,14 @@ from health_check.views import HealthCheckView
 
 
 # Scalar UI 專用 CSP：只對此 view 放寬，全域嚴格 CSP 不受影響。
-@csp_update(  # type: ignore[untyped-decorator]
-    SCRIPT_SRC=["https://cdn.jsdelivr.net", "'unsafe-inline'"],
-    STYLE_SRC=["https://cdn.jsdelivr.net", "'unsafe-inline'"],
-    IMG_SRC=["'self'", "data:", "https:"],
-    FONT_SRC=["https://cdn.jsdelivr.net"],
+# django-csp 4.x 的 csp_update 改收 directive dict（取代 3.x 的大寫 kwargs）。
+@csp_update(
+    {
+        "script-src": ["https://cdn.jsdelivr.net", UNSAFE_INLINE],
+        "style-src": ["https://cdn.jsdelivr.net", UNSAFE_INLINE],
+        "img-src": [SELF, "data:", "https:"],
+        "font-src": ["https://cdn.jsdelivr.net"],
+    }
 )
 def scalar_view(request: HttpRequest) -> HttpResponse:
     """Scalar API 文件 UI（僅開發環境）。
