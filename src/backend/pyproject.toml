@@ -6,10 +6,10 @@ requires-python = ">=3.14"
 # 只開放 patch（bugfix）升級；minor 升級需要明確調整 range 才能生效，避免
 # `uv sync` 於 CI 自動升上 breaking 的 minor 版並讓測試在 PR 階段才爆掉。
 dependencies = [
-    "Django>=6.0.6,<6.1",
+    "Django>=6.0.7,<6.1",
     "djangorestframework>=3.17.1,<3.18",
     "djangorestframework-simplejwt>=5.5.1,<5.6",
-    "drf-spectacular>=0.29,<0.30",
+    "drf-spectacular>=0.30.0,<0.31",
     "psycopg[binary]>=3.3.4,<3.4",
     "django-cors-headers>=4.9,<4.10",
     "django-csp>=4.0,<4.1",
@@ -31,8 +31,8 @@ dev = [
     "factory-boy>=3.3.3,<3.4",
     # ruff 0.x 的 minor 號才是 breaking-change 邊界（0.14 → 0.15 會改 lint rule 行為），
     # patch-only 範圍對齊 uv.lock 的 0.15.x。
-    "ruff>=0.15.20,<0.16",
-    "mypy>=2.1.0,<2.2",
+    "ruff>=0.15.21,<0.16",
+    "mypy>=2.2.0,<2.3",
     "django-stubs[compatible-mypy]>=6.0.6,<6.1",
     "djangorestframework-stubs>=3.17.0,<3.18",
     # bandit：靜態安全掃描（hardcoded secret、unsafe yaml.load、shell=True 等）。
